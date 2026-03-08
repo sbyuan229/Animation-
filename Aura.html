@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Epic Plasma Mitosis</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    /* 清除網頁預設邊距，並隱藏捲軸，讓畫布全螢幕顯示 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000000;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    let myShader;
+
+    // ==========================================
+    // 💡 全域變數與系統設定
+    // ==========================================
+    let forcePoints = [];
+    let numForcePoints = 7;
+    let rotX = 0, rotY = 0, rotZ = 0;
+    let speedX, speedY, speedZ;
+    let time = 0;
+    let currentDonutY = 0;
+    let targetDonutY = 0;
+
+    let globalTilt = 0.785398; // 初始 45 度對角線
+    let tiltVelocity = 0;
+    let noiseOffset = 0; 
+
+    // 全域時間流速控制
+    const baseTimeStep = 0.02; 
+    let globalTimeScale = 1.0; 
+
+    const SPACE_SCALE = 0.012; 
+
+    // ==========================================
+    // 🎨 頂點著色器 (Vertex Shader)
+    // ==========================================
+    const vert = `#version 300 es
+    precision highp float;
+    in vec3 aPosition;
+
+    void main() {
+      gl_Position = vec4(aPosition.xy * 2.0 - 1.0, 0.0, 1.0);
+    }`;
+
+    // ==========================================
+    // 🌌 片元著色器 (Fragment Shader)
+    // ==========================================
+    const frag = `#version 300 es
+    precision highp float;
+
+    uniform vec2 r;
+    uniform float t;
+    uniform float uRealTime; 
+    uniform float uTilt;     
+
+    uniform float uHoverY;
+    uniform vec3 uRot;
+
+    uniform vec3 uFPos[7];
+    uniform float uFStr[7];
+    uniform float uFRad[7];
+
+    out vec4 o;
+
+    float map(float value, float inMin, float inMax, float outMin, float outMax) {
+      return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);
+    }
+
+    float smin(float a, float b, float k) {
+      float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+      return mix(b, a, h) - k * h * (1.0 - h);
+    }
+
+    vec2 fNoise(float theta, float time) {
+      float n1 = sin(theta * 1.5 + time * 0.1);
+      float n2 = sin((theta + 1.0) * 2.5 - time * 0.15);
+      return vec2(n1, n2) * 0.15;
+    }
+
+    float twist(float t, float pd) {
+        return sin(t * 1.5 + pd);
+    }
+
+    void main() {
+      vec2 uv = (gl_FragCoord.xy * 2.0 - r.xy) / r.y;
+      o = vec4(0.0);
+
+      float z = 0.0, d = 0.0, s = 0.0;
+
+      for(float i = 0.0; i < 60.0; i++) {
+        vec3 p = z * normalize(vec3(uv, 1.5));
+        p.z -= 8.2; 
+
+        p.y -= uHoverY;
+        
+        mat2 rotX = mat2(cos(uRot.x), sin(uRot.x), -sin(uRot.x), cos(uRot.x));
+        mat2 rotY = mat2(cos(uRot.y), sin(uRot.y), -sin(uRot.y), cos(uRot.y));
+        mat2 rotZ = mat2(cos(uRot.z), sin(uRot.z), -sin(uRot.z), cos(uRot.z));
+        
+        p.yz = rotX * p.yz;
+        p.xz = rotY * p.xz;
+        p.xy = rotZ * p.xy;
+
+        mat2 rotTilt = mat2(cos(uTilt), sin(uTilt), -sin(uTilt), cos(uTilt));
+        p.xy = rotTilt * p.xy;
+
+        vec3 turbulentP = p;
+        vec3 fieldOffset = vec3(0.0);
+
+        for(int k = 0; k < 7; k++) {
+          float distToForce = length(p - uFPos[k]);
+          if(distToForce < uFRad[k]) {
+            float pct = 1.0 - (distToForce / uFRad[k]);
+            float ease = pct * pct * (3.0 - 2.0 * pct);
+            
+            float angle = float(k) * 0.9 + t * 0.4; 
+            fieldOffset.x += sin(angle + p.z) * uFStr[k] * ease * 0.5;
+            fieldOffset.y += cos(angle - p.x) * uFStr[k] * ease * 0.5;
+            fieldOffset.z += sin(angle * 1.5 + p.y) * uFStr[k] * ease * 0.5;
+          }
+        }
+        p += fieldOffset;
+
+        float theta = atan(p.y, p.x);
+        float r_cyl = length(p.xy) - 3.2; 
+        vec2 crossSection = vec2(r_cyl, p.z);
+        
+        float breathOffset = t * 0.4; 
+        float nVal = sin(t * 0.15) * 3.1415; 
+        float maskValue = sin(theta + breathOffset + nVal);
+        float breathMask = clamp(map(maskValue, 0.3, 1.0, 0.0, 1.0), 0.0, 1.0);
+        breathMask = breathMask * breathMask * (3.0 - 2.0 * breathMask); 
+        float breatheEffect = breathMask * (sin(t * 1.5) * 0.2 + cos(t * 1.2) * 0.1);
+
+        float organicT = theta * 3.0 - t * 1.5; 
+        float spread = 1.2 + breatheEffect * 1.5; 
+        
+        float basePhase = t * 0.1; 
+        
+        float t_pd1 = 0.0 + basePhase;
+        float t_pd2 = 1.6 + basePhase + sin(t * 0.03 + 2.0) * 0.1;
+        float t_pd3 = 3.2 + basePhase + cos(t * 0.03 + 3.0) * 0.1;
+        float t_pd4 = 4.8 + basePhase - sin(t * 0.03 + 4.0) * 0.1;
+
+        // 分裂邏輯 (讓前 30 秒有更充分的單體展示時間)
+        float split1 = smoothstep(18.0, 38.0, uRealTime);
+        float split2 = smoothstep(32.0, 52.0, uRealTime);
+        float split3 = smoothstep(46.0, 66.0, uRealTime);
+
+        float pd1 = t_pd1;
+        float pd2 = mix(pd1, t_pd2, split1); 
+        float pd3 = mix(pd2, t_pd3, split2); 
+        float pd4 = mix(pd3, t_pd4, split3); 
+
+        vec2 noiseOffset = fNoise(organicT + t * 0.03, t);
+
+        vec2 basePos1 = vec2(cos(organicT + pd1 + noiseOffset.x), sin((organicT + pd1 + noiseOffset.y) * 2.05));
+        vec2 basePos2 = vec2(cos(organicT + pd2 + noiseOffset.y), sin((organicT + pd2 + noiseOffset.x) * 1.9)); 
+        vec2 basePos3 = vec2(cos(organicT + pd3 + fNoise(theta + 1.0, t).x), sin((organicT + pd3) * 2.0)); 
+        vec2 basePos4 = vec2(cos(organicT + pd4 + fNoise(theta + 2.0, t).y), sin((organicT + pd4) * 2.1));
+
+        vec2 p1 = basePos1 * spread;
+        vec2 p2 = basePos2 * spread;
+        vec2 p3 = basePos3 * spread;
+        vec2 p4 = basePos4 * spread;
+
+        float coreRadius = 0.25; 
+        float d1 = length(crossSection - p1) - coreRadius;
+        float d2 = length(crossSection - p2) - coreRadius;
+        float d3 = length(crossSection - p3) - coreRadius;
+        float d4 = length(crossSection - p4) - coreRadius;
+
+        float mergedDist = smin(d1, d2, 0.7); 
+        mergedDist = smin(mergedDist, d3, 0.7);
+        mergedDist = smin(mergedDist, d4, 0.7);
+
+        vec3 warpP = p;
+        for(float j = 1.0; j < 4.0; j++) { 
+          float freq = j * 1.3; 
+          float speed = 0.5 + j * 0.2;       
+          warpP += sin(warpP.yzx * freq + t * speed).yzx / (freq * 1.2);
+        }
+        s = warpP.y; 
+
+        float shape = 0.1 * abs(mergedDist) + 0.04 * abs(s);
+        
+        d = shape;
+        z += d * 0.8; 
+
+        float colorPhase = sin(organicT + twist(theta, pd1)) * 1.5; 
+        o += (cos(s * 2.0 + colorPhase + vec4(0.0, 1.2, 2.5, 0.0)) + 1.0) / d * z * 0.8;
+      }
+      
+      vec3 color = o.rgb / 1.8e4; 
+      color = clamp((color * (2.51 * color + 0.03)) / (color * (2.43 * color + 0.59) + 0.14), 0.0, 1.0);
+      
+      float fade = smoothstep(0.0, 15.0, uRealTime);
+      color *= fade;
+
+      o = vec4(color, 1.0);
+    }`;
+
+    // ==========================================
+    // 🚀 p5.js 主程式 (Setup & Draw)
+    // ==========================================
+    function setup() {
+      createCanvas(windowWidth, windowHeight, WEBGL);
+      angleMode(RADIANS);
+      pixelDensity(1); 
+      myShader = createShader(vert, frag);
+      noStroke();
+
+      speedX = random(-0.003, 0.003);
+      speedY = random(-0.003, 0.003);
+      speedZ = random(-0.003, 0.003);
+      
+      noiseOffset = random(1000);
+
+      for (let i = 0; i < numForcePoints; i++) {
+        let fp = new ForcePoint();
+        if (i === 0) fp.role = 'pusher';
+        else if (i === 1) fp.role = 'puller';
+        else fp.role = 'random';
+        
+        fp.setNewTarget();
+        forcePoints.push(fp);
+      }
+    }
+
+    function draw() {
+      background(0);
+      
+      let realTime = millis() / 1000.0;
+
+      // 史詩級開場減速系統 (全域動態)
+      let introSpeedMultiplier = map(constrain(realTime, 0, 60), 0, 60, 0.3, 1.0);
+      globalTimeScale = 0.7 * map(noise(realTime * 0.05), 0, 1, 0.5, 1.5) * introSpeedMultiplier;
+
+      let totalLift = 0;
+      let flatFPos = []; 
+      let flatFStr = [];
+      let flatFRad = [];
+
+      for (let fp of forcePoints) {
+        fp.update(forcePoints); 
+        if (fp.currentStrength > 0) totalLift += fp.currentStrength;
+        
+        flatFPos.push(fp.pos.x * SPACE_SCALE, fp.pos.y * SPACE_SCALE, fp.pos.z * SPACE_SCALE);
+        flatFStr.push(fp.currentStrength * SPACE_SCALE * 0.3); 
+        flatFRad.push(fp.currentRadius * SPACE_SCALE);
+      }
+
+      targetDonutY = -totalLift * 0.5;
+      currentDonutY = lerp(currentDonutY, targetDonutY, 0.02 * globalTimeScale);
+      let hoverY = (currentDonutY + sin(frameCount * 0.02) * 30) * SPACE_SCALE;
+
+      // ==========================================
+      // 🌟 [核心修改] 旋轉速度的極限壓制 (前 30 秒完全靜止)
+      // 0 到 30 秒：乘數為 0.0
+      // 30 到 60 秒：從 0.0 緩慢甦醒至 1.0
+      // ==========================================
+      let rotMultiplier = map(constrain(realTime, 30, 60), 30, 60, 0.0, 1.0);
+
+      rotX += speedX * rotMultiplier * globalTimeScale;
+      rotY += speedY * rotMultiplier * globalTimeScale;
+      rotZ += speedZ * rotMultiplier * globalTimeScale;
+
+      // 🌟 讓中軸傾斜的隨機漂流，也在前 30 秒鎖定，之後跟著甦醒
+      let tiltAccel = map(noise(noiseOffset), 0, 1, -0.0003, 0.0003);
+      tiltVelocity += tiltAccel * globalTimeScale;
+      tiltVelocity *= 0.985; 
+      globalTilt += tiltVelocity * rotMultiplier; 
+      noiseOffset += 0.005 * globalTimeScale; 
+
+      shader(myShader);
+      myShader.setUniform('r', [width, height]);
+      myShader.setUniform('t', time);
+      myShader.setUniform('uRealTime', realTime);
+      myShader.setUniform('uTilt', globalTilt); 
+      
+      myShader.setUniform('uHoverY', hoverY);
+      myShader.setUniform('uRot', [rotX, rotY, rotZ]);
+      myShader.setUniform('uFPos', flatFPos);
+      myShader.setUniform('uFStr', flatFStr);
+      myShader.setUniform('uFRad', flatFRad);
+
+      rect(-width / 2, -height / 2, width, height);
+      
+      time += baseTimeStep * globalTimeScale; 
+    }
+
+    // ==========================================
+    // 🧠 力場點類別 (全域變速物理綁定)
+    // ==========================================
+    class ForcePoint {
+      constructor() {
+        this.pos = p5.Vector.random3D().mult(random(50, 150));
+        this.vel = p5.Vector.random3D().mult(random(0.8, 1.8));
+        this.currentStrength = 0;
+        this.currentRadius = 150;
+        this.role = 'random';
+        this.chaseTarget = null;
+        this.changeTimer = 0;
+      }
+      
+      setNewTarget() {
+        if (this.role === 'pusher') {
+          this.targetStrength = random(80, 120);
+        } else if (this.role === 'puller') {
+          this.targetStrength = random(-100, -50);
+        } else {
+          let s = random(50, 100);
+          this.targetStrength = random() > 0.5 ? s : -s;
+        }
+        
+        this.targetRadius = random(100, 250);
+        this.targetVel = p5.Vector.random3D().mult(random(0.6, 1.5));
+        this.lerpSpeed = random(0.003, 0.01);
+        this.changeTimer = random(100, 250); 
+      }
+      
+      update(allForcePoints) {
+        this.currentStrength = lerp(this.currentStrength, this.targetStrength, this.lerpSpeed * globalTimeScale);
+        this.currentRadius = lerp(this.currentRadius, this.targetRadius, this.lerpSpeed * globalTimeScale);
+        this.rSq = this.currentRadius * this.currentRadius;
+        
+        if (random() < 0.01 * globalTimeScale) {
+          let potentialTarget = random(allForcePoints);
+          if (potentialTarget !== this) this.chaseTarget = potentialTarget;
+        }
+        
+        if (this.chaseTarget) {
+          let steer = p5.Vector.sub(this.chaseTarget.pos, this.pos);
+          steer.normalize();
+          steer.x += map(noise(this.pos.x * 0.02, time * 0.5), 0, 1, -1.0, 1.0);
+          steer.y += map(noise(this.pos.y * 0.02, time * 0.5), 0, 1, -1.0, 1.0);
+          steer.z += map(noise(this.pos.z * 0.02, time * 0.5), 0, 1, -1.0, 1.0);
+          steer.mult(0.25);
+          this.targetVel.add(steer);
+        }
+
+        this.vel.lerp(this.targetVel, this.lerpSpeed * globalTimeScale);
+        this.pos.add(p5.Vector.mult(this.vel, globalTimeScale));
+        
+        this.changeTimer -= globalTimeScale;
+        if (this.changeTimer <= 0) this.setNewTarget();
+        
+        if (this.pos.mag() > 220) {
+          let returnSteer = p5.Vector.mult(this.pos, -0.015);
+          this.targetVel.add(returnSteer);
+        }
+      }
+    }
+
+    // 支援視窗大小改變時自動重新適應畫布
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
+  </script>
+</body>
+</html>
