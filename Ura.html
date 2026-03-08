@@ -1,0 +1,254 @@
+/**
+ * 吳沅冠雕塑生成系統 - 靈光圓環版 (OpenProcessing 專用)
+ * 整合：白色介面、參數控制、極限發光、電漿光流
+ */
+
+let myShader;
+let time = 0, colorTime = 0, forcePoints = [];
+let sliders = {};
+
+// 🌟 核心著色器代碼
+const vert = `#version 300 es
+precision highp float;
+in vec3 aPosition;
+void main() { gl_Position = vec4(aPosition.xy * 2.0 - 1.0, 0.0, 1.0); }`;
+
+const frag = `#version 300 es
+precision highp float;
+uniform vec2 r;
+uniform float t, ct;
+uniform vec3 uRot;
+uniform float uBaseBright, uGlowBoost, uCameraZ, uSat, uDistort, uRingCount, uBreathe;
+uniform vec3 uForcePos[7];
+uniform float uForceStrength[7];
+uniform float uForceRadius[7];
+out vec4 o;
+
+float hash(vec3 p) {
+    p = fract(p * vec3(123.34, 456.21, 789.13));
+    p += dot(p, p.yzx + 19.19);
+    return fract((p.x + p.y) * p.z);
+}
+float noise(vec3 p) {
+    vec3 i = floor(p); vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(hash(i + vec3(0, 0, 0)), hash(i + vec3(1, 0, 0)), f.x),
+               mix(hash(i + vec3(0, 1, 0)), hash(i + vec3(1, 1, 0)), f.x), f.y),
+               mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x),
+               mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+float smin(float a, float b, float k) {
+  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+  return mix(b, a, h) - k * h * (1.0 - h);
+}
+mat2 rot(float a) { float s = sin(a), c = cos(a); return mat2(c, -s, s, c); }
+vec3 rotate3D(vec3 p, vec3 r_ang) {
+    p.yz *= rot(r_ang.x); p.xz *= rot(r_ang.y); p.xy *= rot(r_ang.z);
+    return p;
+}
+vec3 ACESFilm(vec3 x) {
+    float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+    return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy * 2.0 - r.xy) / r.y;
+  o = vec4(0.0);
+  float z = 0.0;
+
+  for(float i = 0.0; i < 90.0; i++) {
+    vec3 p_orig = z * normalize(vec3(uv, 1.8));
+    p_orig.z -= uCameraZ; 
+    p_orig = rotate3D(p_orig, uRot);
+    
+    float mD = 1e5;
+    for(float j = 1.0; j <= 8.0; j++) {
+        if(j > uRingCount) break;
+        vec3 p = p_orig;
+        float speedMult = 0.4 + j * 0.2;
+        p = rotate3D(p, uRot * speedMult + j * 2.5);
+        float theta = atan(p.y, p.x);
+        float ringBaseSize = 2.4 + j * 0.55;
+        float distortion = noise(vec3(p.x * 0.5, p.y * 0.5, t * 0.3 + j)) * uDistort;
+        float dynamicR = ringBaseSize + distortion + sin(theta * (2.0 + j * 0.2) + t) * 0.2;
+        vec2 crossSection = vec2(length(p.xy) - dynamicR, p.z);
+        float flow = t * (0.9 + j * 0.2);
+        vec2 p_spiral = vec2(sin(theta * 2.1 + flow), cos(theta * 1.8 - flow)) * (2.8 + j * 0.2);
+        float d_ring = length(crossSection - p_spiral) - (0.13 + j * 0.015);
+        mD = smin(mD, d_ring, 0.85);
+    }
+
+    float rOffset = 0.0;
+    for(int k = 0; k < 7; k++) {
+        float dF = length(p_orig - uForcePos[k] * 1.8);
+        if(dF < uForceRadius[k] * 1.5) {
+            float pct = 1.0 - (dF / (uForceRadius[k] * 1.5));
+            rOffset += uForceStrength[k] * 4.5 * pct * pct;
+        }
+    }
+
+    vec3 warpP = p_orig; // 🌟 修復處：確保 warpP 在這裡被定義
+    warpP += sin(warpP.yzx * 1.3 + t * 0.8).yzx / 5.0;
+    
+    float d = 0.15 * abs(mD) + 0.02;
+    z += d * 0.2; 
+    
+    float theta_main = atan(p_orig.y, p_orig.x);
+    float colorBase = theta_main * 1.2 + ct + warpP.y * 0.2;
+    vec3 proceduralCol = cos(colorBase + vec3(0.0, 1.2, 2.5)) + uSat; 
+    
+    float plasmaAccum = (z * 0.06 / (d + 0.005)) + uBaseBright; 
+    float independentBoost = (rOffset * 0.15) + (uBreathe * 0.05); 
+    
+    vec3 AccColor = (proceduralCol * plasmaAccum * 15.0) + (proceduralCol * independentBoost * uGlowBoost);
+    o += vec4(AccColor, 1.0); 
+  }
+
+  vec3 finalColor = o.rgb / 3.0e4; 
+  finalColor = ACESFilm(finalColor);
+  o = vec4(finalColor, 1.0); 
+}`;
+
+function setup() {
+  // 建立畫布，留出左側 360px 給介面
+  createCanvas(windowWidth - 360, windowHeight, WEBGL).position(360, 0);
+  myShader = createShader(vert, frag);
+  
+  // 初始化力場點
+  for (let i = 0; i < 7; i++) {
+    forcePoints.push({
+      pos: createVector(0,0,0),
+      angle: random(TWO_PI),
+      isPermanent: i < 3,
+      strength: 0,
+      radius: random(200, 350),
+      angleVel: random(0.01, 0.04)
+    });
+  }
+  
+  // 🌟 使用 JS 建立那個漂亮的白色介面
+  buildInterface();
+}
+
+function buildInterface() {
+  // 建立側邊欄背景
+  let sidebar = createDiv('');
+  sidebar.position(0, 0);
+  sidebar.size(360, windowHeight);
+  sidebar.style('background', '#fff');
+  sidebar.style('padding', '25px');
+  sidebar.style('box-sizing', 'border-box');
+  sidebar.style('border-right', '1px solid #000');
+  sidebar.style('overflow-y', 'auto');
+  sidebar.style('font-family', '"Noto Serif TC", serif');
+
+  let title = createElement('h2', '吳沅冠嗚啦動畫自訂儀');
+  title.parent(sidebar);
+  title.style('font-size', '18px');
+  title.style('margin-bottom', '25px');
+
+  // 滑桿清單
+  const config = [
+    { sec: '基礎設定', items: [
+      { id: 'ringCount', label: '光環重疊數量', min: 1, max: 8, step: 1, val: 6 },
+      { id: 'cameraZ', label: '視角距離 (Macro)', min: 5, max: 25, step: 0.5, val: 10.5 },
+      { id: 'speed', label: '運動流轉速度', min: 0, max: 0.08, step: 0.001, val: 0.016 }
+    ]},
+    { sec: '光學與色彩', items: [
+      { id: 'baseBright', label: '全局基礎亮度', min: 0.01, max: 2.0, step: 0.01, val: 0.45 },
+      { id: 'glowBoost', label: '高光爆發強度', min: 0, max: 150, step: 1, val: 55 },
+      { id: 'sat', label: '顏色飽和與底色', min: 0.5, max: 3.0, step: 0.1, val: 1.2 }
+    ]},
+    { sec: '幾何扭曲', items: [
+      { id: 'distort', label: '環體有機扭曲度', min: 0, max: 2.0, step: 0.1, val: 0.7 },
+      { id: 'breathe', label: '局部呼吸感強度', min: 0, max: 1.0, step: 0.05, val: 0.4 }
+    ]}
+  ];
+
+  config.forEach(group => {
+    let section = createDiv('── ' + group.sec + ' ──');
+    section.parent(sidebar);
+    section.style('font-size', '11px');
+    section.style('color', '#999');
+    section.style('margin', '20px 0 10px');
+    section.style('border-bottom', '1px solid #eee');
+
+    group.items.forEach(c => {
+      let container = createDiv('');
+      container.parent(sidebar);
+      container.style('margin-bottom', '15px');
+
+      let header = createDiv(`<span>${c.label}</span><span id="v-${c.id}" style="font-size: 11px; color:#666;">${c.val}</span>`);
+      header.parent(container);
+      header.style('display', 'flex');
+      header.style('justify-content', 'space-between');
+      header.style('font-size', '12px');
+
+      let slider = createSlider(c.min, c.max, c.val, c.step);
+      slider.parent(container);
+      slider.style('width', '100%');
+      slider.input(() => select(`#v-${c.id}`).html(slider.value()));
+      sliders[c.id] = slider;
+    });
+  });
+
+  let btn = createButton('隨機生成');
+  btn.parent(sidebar);
+  btn.addClass('btn-black');
+  btn.style('background', '#000');
+  btn.style('color', '#fff');
+  btn.style('border', 'none');
+  btn.style('padding', '12px');
+  btn.style('width', '100%');
+  btn.style('cursor', 'pointer');
+  btn.mousePressed(randomizeAll);
+}
+
+function randomizeAll() {
+  Object.keys(sliders).forEach(k => {
+    let s = sliders[k];
+    let val = random(s.elt.min, s.elt.max);
+    s.value(val);
+    select(`#v-${k}`).html(s.value());
+  });
+}
+
+function draw() {
+  background(0);
+  let dt = sliders.speed.value();
+  time += dt; colorTime += dt * 2.0;
+
+  forcePoints.forEach(fp => {
+    fp.angle += fp.angleVel;
+    fp.pos.x = 230 * cos(fp.angle); fp.pos.y = 230 * sin(fp.angle);
+    fp.strength = fp.isPermanent ? 150 : 80;
+  });
+
+  shader(myShader);
+  myShader.setUniform('r', [width, height]);
+  myShader.setUniform('t', time);
+  myShader.setUniform('ct', colorTime);
+  myShader.setUniform('uRot', [frameCount * 0.005, frameCount * 0.003, frameCount * 0.002]);
+  myShader.setUniform('uBaseBright', sliders.baseBright.value());
+  myShader.setUniform('uGlowBoost', sliders.glowBoost.value());
+  myShader.setUniform('uCameraZ', sliders.cameraZ.value());
+  myShader.setUniform('uSat', sliders.sat.value());
+  myShader.setUniform('uDistort', sliders.distort.value());
+  myShader.setUniform('uRingCount', sliders.ringCount.value());
+  myShader.setUniform('uBreathe', sliders.breathe.value());
+
+  let fPos = [], fStr = [], fRad = [];
+  forcePoints.forEach(fp => {
+    fPos.push(fp.pos.x * 0.02, fp.pos.y * 0.02, fp.pos.z * 0.02);
+    fStr.push(fp.strength * 0.0016); fRad.push(fp.radius * 0.012);
+  });
+  myShader.setUniform('uForcePos', fPos);
+  myShader.setUniform('uForceStrength', fStr);
+  myShader.setUniform('uForceRadius', fRad);
+
+  rect(-width / 2, -height / 2, width, height);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth - 360, windowHeight);
+}
