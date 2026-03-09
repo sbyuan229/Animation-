@@ -158,8 +158,8 @@ function setup() {
   isHDRSupported = window.matchMedia('(dynamic-range: high)').matches;
   const canvas = createCanvas(windowWidth, windowHeight, WEBGL);
   
-  // 🌟 啟動 120Hz 支援
-  frameRate(120);
+  // 🌟 鎖定 60 幀穩定運作
+  frameRate(60);
   
   if (isHDRSupported) canvas.elt.getContext('webgl2', { colorSpace: 'display-p3', pixelFormat: 'float16' });
   pixelDensity(min(window.devicePixelRatio, 1.5));
@@ -219,6 +219,7 @@ function getCoordinateID() {
 function loadFromID(id) {
   let parts = id.split('_');
   if (parts.length === 7) {
+    // 🌟 實驗室權限解放：手動輸入時完全不限制數量
     params.ringCount = parseFloat(parts[0]) || 1; 
     params.cameraZ = parseFloat(parts[1]) || 5;
     params.speed = parseFloat(parts[2]) || 0.01;
@@ -231,6 +232,11 @@ function loadFromID(id) {
 
 function syncUi() { document.getElementById('coord-input').value = getCoordinateID(); }
 
+// 算力守護者：評估參數組合的消耗分數
+function getComplexityScore(p) {
+  return (p.ringCount * 1.5) + (p.distort * 2.5) + (p.glowBoost / 30) + (p.speed * 8);
+}
+
 function mousePressed() {
   if (isUiFocused) return;
   if (currentStatus === "expanded" && (mouseY > height - 80 && mouseX < 420)) return;
@@ -238,28 +244,39 @@ function mousePressed() {
 
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
     clickCount++;
-    let tempRingCount, tempSpeed;
+    
+    let nextParams = {};
+    const MAX_BUDGET = 22; // 🌟 60幀下的算力預算總上限
+    
     if (clickCount % 5 === 0) {
-      tempRingCount = floor(random(1, 7)); 
-      tempSpeed = tempRingCount >= 5 ? random(0.002, 0.04) : random(0.1, 0.2);
-      params.ringCount = tempRingCount;
-      params.speed = tempSpeed;
-      params.cameraZ = params.cameraZ < 10.0 ? random(20.0, 30.0) : random(3.0, 5.0); 
-      params.baseBright = params.baseBright > 0.4 ? random(0.01, 0.1) : random(0.7, 1.2); 
-      params.glowBoost = params.glowBoost < 40 ? random(100, 150) : random(0, 15); 
-      params.sat = params.sat > 1.2 ? random(0.2, 0.6) : random(2.0, 3.0); 
-      params.distort = params.distort > 0.8 ? 0.0 : random(1.5, 2.5); 
+      nextParams.ringCount = floor(random(1, 11)); // 隨機解放至 10
+      nextParams.speed = random(0.002, 0.2);
+      nextParams.distort = random(0.0, 2.5);
+      nextParams.glowBoost = random(0, 150);
+      nextParams.cameraZ = random(3.0, 30.0);
+      nextParams.baseBright = random(0.01, 1.2);
+      nextParams.sat = random(0.2, 3.0);
     } else {
-      tempRingCount = floor(random(1, 7));
-      tempSpeed = tempRingCount >= 5 ? random(0.01, 0.05) : random(0.01, 0.1);
-      params.ringCount = tempRingCount;
-      params.speed = tempSpeed;
-      params.cameraZ = random(4.5, 18.0);      
-      params.baseBright = random(0.1, 0.7);   
-      params.glowBoost = random(10, 80);      
-      params.sat = random(0.6, 2.0);           
-      params.distort = random(0.1, 1.5);       
+      nextParams.ringCount = floor(random(1, 11));
+      nextParams.speed = random(0.01, 0.1);
+      nextParams.distort = random(0.1, 1.5);
+      nextParams.glowBoost = random(10, 80);
+      nextParams.cameraZ = random(4.5, 18.0);
+      nextParams.baseBright = random(0.1, 0.7);
+      nextParams.sat = random(0.6, 2.0);
     }
+
+    // 動態平衡機制：若超過預算，自動壓低扭曲度與速度來平衡效能
+    let attempts = 0;
+    while (getComplexityScore(nextParams) > MAX_BUDGET && attempts < 10) {
+      nextParams.distort *= 0.85;
+      nextParams.speed *= 0.85;
+      nextParams.glowBoost *= 0.9;
+      if (attempts > 5) nextParams.ringCount = max(1, nextParams.ringCount - 1);
+      attempts++;
+    }
+
+    params = {...nextParams};
     syncUi();
   }
 }
@@ -267,13 +284,12 @@ function mousePressed() {
 function draw() {
   background(0);
   
-  // 🌟 關鍵優化：使用 deltaTime 進行幀率獨立補償 (以 60FPS 為基準)
+  // 60幀下依然保留 deltaTime 補償，確保即便電腦稍微延遲，動畫動態也保持穩定
   let dt = deltaTime / (1000/60); 
   time += params.speed * dt; 
   colorTime += params.speed * 1.5 * dt;
 
   forcePoints.forEach(fp => {
-    // 這裡的旋轉也要加入 dt 補償
     fp.angle += fp.angleVel * dt;
     fp.pos.x = 220 * cos(fp.angle); fp.pos.y = 220 * sin(fp.angle);
     fp.strength = fp.isPermanent ? 140 : 80;
@@ -287,7 +303,6 @@ function draw() {
   myShader.setUniform('uBaseBright', params.baseBright); myShader.setUniform('uGlowBoost', params.glowBoost);
   myShader.setUniform('uCameraZ', params.cameraZ); myShader.setUniform('uSat', params.sat);
   myShader.setUniform('uDistort', params.distort); myShader.setUniform('uRingCount', params.ringCount);
-  
   let fPos = [], fStr = [], fRad = [];
   forcePoints.forEach(fp => {
     fPos.push(fp.pos.x * 0.02, fp.pos.y * 0.02, fp.pos.z * 0.02);
