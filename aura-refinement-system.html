@@ -10,9 +10,13 @@
     body { margin: 0; padding: 0; background-color: #000; overflow: hidden; }
     canvas { display: block; }
 
-    /* --- 左側控制列 --- */
+    /* --- 核心 UI 容器 --- */
     #ui-wrapper-left {
-      position: absolute; bottom: 30px; left: 30px; z-index: 100; font-family: 'VT323', monospace;
+      position: absolute;
+      bottom: 30px;
+      left: 30px;
+      z-index: 100;
+      font-family: 'VT323', monospace;
     }
 
     #hdr-tag {
@@ -22,42 +26,58 @@
     }
     #hdr-tag.visible { display: block; opacity: 0.9; }
 
+    /* 🌟 整合式控制面板：由左至右排列 */
     #control-panel {
-      display: flex; align-items: center; background: rgba(0, 0, 0, 0); 
-      border: 1px solid #ffffff; width: 320px; height: 34px; overflow: hidden; 
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0); /* 全透明背景 */
+      border: 1px solid #ffffff;
+      width: 360px; /* 寬度微調以容納多個按鈕 */
+      height: 34px;
+      overflow: hidden; 
       transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
       transform-origin: left center;
     }
     #control-panel.is-collapsed { width: 0; opacity: 0; transform: scaleX(0); border-color: transparent; pointer-events: none; }
 
     #coord-input {
-      background: transparent; color: #ffffff; border: none;
-      padding: 0 10px 4px 10px; font-family: 'VT323', monospace;
-      font-size: 18px; width: 220px; height: 100%; outline: none; letter-spacing: 1px;
+      background: transparent;
+      color: #ffffff;
+      border: none;
+      padding: 0 10px 4px 10px; /* 文字位置上移修正 */
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      flex-grow: 1; /* 自動填滿剩餘空間 */
+      height: 100%;
+      outline: none;
+      letter-spacing: 1px;
     }
 
-    /* --- 右側全螢幕按鈕 --- */
-    #fullscreen-btn {
-      position: absolute; bottom: 30px; right: 30px; z-index: 100;
-      width: 34px; height: 34px; background: rgba(0, 0, 0, 0); border: 1px solid #ffffff;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: all 0.3s ease;
-    }
-
+    /* 統一按鈕樣式 */
     .ui-btn {
-      background: transparent; border: none; height: 100%; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; color: white;
+      background: transparent;
+      border: none;
+      border-left: 1px solid rgba(255,255,255,0.4);
+      height: 100%;
+      width: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
       transition: all 0.2s ease;
+      flex-shrink: 0;
     }
-    .ui-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    .ui-btn:hover { background: rgba(255, 255, 255, 0.15); }
+    .ui-btn:active { opacity: 0.5; }
 
-    /* < 符號完全置中與字體統一 */
     #collapse-btn {
-      font-family: 'VT323', monospace; font-size: 20px; width: 36px; padding: 0;
-      border-left: 1px solid rgba(255,255,255,0.5); flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
+      font-family: 'VT323', monospace;
+      font-size: 20px;
+      width: 36px;
     }
 
+    /* 收束後的提示符 */
     #collapsed-trigger {
       position: absolute; bottom: 0; left: 0; color: #ffffff; font-size: 24px;
       cursor: pointer; opacity: 0; transition: opacity 0.4s ease, transform 0.3s ease;
@@ -67,6 +87,7 @@
 
     .blink { animation: blink-animation 1s steps(2, start) infinite; }
     @keyframes blink-animation { to { visibility: hidden; } }
+
     .pixel-icon { width: 18px; height: 18px; fill: white; }
   </style>
 </head>
@@ -74,25 +95,29 @@
 
 <div id="ui-wrapper-left">
   <div id="hdr-tag">[HDR]</div>
+
   <div id="control-panel">
     <input type="text" id="coord-input" spellcheck="false" autocomplete="off">
-    <button id="copy-btn" class="ui-btn" title="COPY" style="width: 42px; border-left: 1px solid rgba(255,255,255,0.3);">
+
+    <button id="copy-btn" class="ui-btn" title="COPY">
       <svg class="pixel-icon" viewBox="0 0 10 10">
         <rect x="0" y="2" width="6" height="6" /><rect x="1" y="3" width="4" height="4" fill="black" />
         <rect x="3" y="0" width="6" height="6" /><rect x="4" y="1" width="4" height="4" fill="black" />
         <rect x="5" y="2" width="2" height="2" fill="white" />
       </svg>
     </button>
-    <button id="collapse-btn" class="ui-btn">&lt;</button>
+
+    <button id="fs-btn" class="ui-btn" title="FULLSCREEN">
+      <svg class="pixel-icon" viewBox="0 0 16 16">
+        <path id="fs-path" d="M1 1h5v1H2v4h-1V1zm9 0h5v5h-1V2h-4V1zM1 10h1v4h4v1H1v-5zm14 0v5h-5v-1h4v-4h1z" />
+      </svg>
+    </button>
+
+    <button id="collapse-btn" class="ui-btn" title="COLLAPSE">&lt;</button>
   </div>
+
   <div id="collapsed-trigger">&gt;<span class="blink">_</span></div>
 </div>
-
-<button id="fullscreen-btn">
-  <svg id="fs-icon" class="pixel-icon" viewBox="0 0 16 16">
-    <path id="fs-path" d="M1 1h5v1H2v4h-1V1zm9 0h5v5h-1V2h-4V1zM1 10h1v4h4v1H1v-5zm14 0v5h-5v-1h4v-4h1z" />
-  </svg>
-</button>
 
 <script>
 let myShader, time = 0, colorTime = 0, forcePoints = [], clickCount = 0;
@@ -170,8 +195,8 @@ void main() {
     }
 
     if (uIsHDR) {
-        // 🌟 HDR 模式優化：降低分母從 1.6e4 到 8.0e3，強迫輸出更高能量
-        o.rgb = o.rgb / 8000.0; 
+        // 🌟 HDR 能量強化：分母降至 7000，讓亮部顯著突破 1.0
+        o.rgb = o.rgb / 7000.0; 
     } else {
         o.rgb = ACESFilm(o.rgb / 2.8e4); 
     }
@@ -194,11 +219,12 @@ function setup() {
 
   const panel = document.getElementById('control-panel'), trigger = document.getElementById('collapsed-trigger');
   const collapseBtn = document.getElementById('collapse-btn'), hdrTag = document.getElementById('hdr-tag');
-  const inputEl = document.getElementById('coord-input'), fsBtn = document.getElementById('fullscreen-btn');
+  const inputEl = document.getElementById('coord-input'), fsBtn = document.getElementById('fs-btn');
 
-  // 🌟 自動隱藏不支援全螢幕的按鈕
+  // 🌟 自動檢查全螢幕支援度，不支援則移除按鈕並重新計算面板寬度
   if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) {
     fsBtn.style.display = 'none';
+    panel.style.width = '320px'; // 縮減寬度
   }
 
   function updateHdrTag() {
@@ -218,15 +244,20 @@ function setup() {
     setTimeout(updateHdrTag, 100);
   });
 
-  fsBtn.addEventListener('click', () => {
+  // 全螢幕切換與圖標更新
+  fsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
     if (!document.fullscreenElement) document.documentElement.requestFullscreen();
     else document.exitFullscreen();
   });
 
   document.addEventListener('fullscreenchange', () => {
     const fsPath = document.getElementById('fs-path');
-    if (document.fullscreenElement) fsPath.setAttribute('d', 'M5 5h-4v1h3v3h1V5zm6 0v4h1v-3h3v-1h-4zM5 11v-4h-1v3h-3v1h4zm6 0h4v-1h-3v-3h-1v4z');
-    else fsPath.setAttribute('d', 'M1 1h5v1H2v4h-1V1zm9 0h5v5h-1V2h-4V1zM1 10h1v4h4v1H1v-5zm14 0v5h-5v-1h4v-4h1z');
+    if (document.fullscreenElement) {
+      fsPath.setAttribute('d', 'M5 5h-4v1h3v3h1V5zm6 0v4h1v-3h3v-1h-4zM5 11v-4h-1v3h-3v1h4zm6 0h4v-1h-3v-3h-1v4z');
+    } else {
+      fsPath.setAttribute('d', 'M1 1h5v1H2v4h-1V1zm9 0h5v5h-1V2h-4V1zM1 10h1v4h4v1H1v-5zm14 0v5h-5v-1h4v-4h1z');
+    }
   });
 
   inputEl.addEventListener('focus', () => isUiFocused = true);
@@ -263,9 +294,9 @@ function syncUi() { document.getElementById('coord-input').value = getCoordinate
 
 function mousePressed() {
   if (isUiFocused) return;
-  if (currentStatus === "expanded" && (mouseY > height - 80 && mouseX < 380)) return;
+  // 屏蔽 UI 點擊區域
+  if (currentStatus === "expanded" && (mouseY > height - 80 && mouseX < 420)) return;
   if (currentStatus === "collapsed" && (mouseY > height - 80 && mouseX < 100)) return;
-  if (mouseY > height - 80 && mouseX > width - 100) return; 
 
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
     clickCount++;
