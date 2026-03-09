@@ -116,7 +116,6 @@ void main() {
     vec2 uv = (gl_FragCoord.xy * 2.0 - r.xy) / min(r.x, r.y);
     o = vec4(0.0);
     float z = 0.0;
-    // 🌟 Shader 演算法擴張：迴圈上限提升至 30，支持手動輸入的高負載模式
     for(int i = 0; i < 40; i++) {
         vec3 p_orig = z * normalize(vec3(uv, 1.8));
         p_orig.z -= uCameraZ; 
@@ -158,6 +157,10 @@ void main() {
 function setup() {
   isHDRSupported = window.matchMedia('(dynamic-range: high)').matches;
   const canvas = createCanvas(windowWidth, windowHeight, WEBGL);
+  
+  // 🌟 啟動 120Hz 支援
+  frameRate(120);
+  
   if (isHDRSupported) canvas.elt.getContext('webgl2', { colorSpace: 'display-p3', pixelFormat: 'float16' });
   pixelDensity(min(window.devicePixelRatio, 1.5));
   myShader = createShader(vert, frag);
@@ -196,12 +199,6 @@ function setup() {
     else document.exitFullscreen();
   });
 
-  document.addEventListener('fullscreenchange', () => {
-    const fsPath = document.getElementById('fs-path');
-    if (document.fullscreenElement) fsPath.setAttribute('d', 'M5 5h-4v1h3v3h1V5zm6 0v4h1v-3h3v-1h-4zM5 11v-4h-1v3h-3v1h4zm6 0h4v-1h-3v-3h-1v4z');
-    else fsPath.setAttribute('d', 'M1 1h5v1H2v4h-1V1zm9 0h5v5h-1V2h-4V1zM1 10h1v4h4v1H1v-5zm14 0v5h-5v-1h4v-4h1z');
-  });
-
   inputEl.addEventListener('focus', () => isUiFocused = true);
   inputEl.addEventListener('blur', () => isUiFocused = false);
   inputEl.addEventListener('input', (e) => loadFromID(e.target.value));
@@ -222,7 +219,6 @@ function getCoordinateID() {
 function loadFromID(id) {
   let parts = id.split('_');
   if (parts.length === 7) {
-    // 🌟 核心修改：手動輸入模式，完全解除 ringCount 的上限限制
     params.ringCount = parseFloat(parts[0]) || 1; 
     params.cameraZ = parseFloat(parts[1]) || 5;
     params.speed = parseFloat(parts[2]) || 0.01;
@@ -242,20 +238,26 @@ function mousePressed() {
 
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
     clickCount++;
+    let tempRingCount, tempSpeed;
     if (clickCount % 5 === 0) {
-      // 🌟 核心修改：隨機邏輯依然維持 1~6 的安全比例
-      params.ringCount = params.ringCount < 4 ? floor(random(4, 7)) : floor(random(1, 4)); 
+      tempRingCount = floor(random(1, 7)); 
+      tempSpeed = tempRingCount >= 5 ? random(0.002, 0.04) : random(0.1, 0.2);
+      params.ringCount = tempRingCount;
+      params.speed = tempSpeed;
       params.cameraZ = params.cameraZ < 10.0 ? random(20.0, 30.0) : random(3.0, 5.0); 
-      params.speed = params.speed < 0.05 ? random(0.12, 0.2) : random(0.002, 0.008); 
       params.baseBright = params.baseBright > 0.4 ? random(0.01, 0.1) : random(0.7, 1.2); 
       params.glowBoost = params.glowBoost < 40 ? random(100, 150) : random(0, 15); 
       params.sat = params.sat > 1.2 ? random(0.2, 0.6) : random(2.0, 3.0); 
       params.distort = params.distort > 0.8 ? 0.0 : random(1.5, 2.5); 
     } else {
-      params.ringCount = floor(random(1, 7)); 
+      tempRingCount = floor(random(1, 7));
+      tempSpeed = tempRingCount >= 5 ? random(0.01, 0.05) : random(0.01, 0.1);
+      params.ringCount = tempRingCount;
+      params.speed = tempSpeed;
       params.cameraZ = random(4.5, 18.0);      
-      params.speed = random(0.01, 0.1); params.baseBright = random(0.1, 0.7);   
-      params.glowBoost = random(10, 80); params.sat = random(0.6, 2.0);           
+      params.baseBright = random(0.1, 0.7);   
+      params.glowBoost = random(10, 80);      
+      params.sat = random(0.6, 2.0);           
       params.distort = random(0.1, 1.5);       
     }
     syncUi();
@@ -264,12 +266,19 @@ function mousePressed() {
 
 function draw() {
   background(0);
-  time += params.speed; colorTime += params.speed * 1.5;
+  
+  // 🌟 關鍵優化：使用 deltaTime 進行幀率獨立補償 (以 60FPS 為基準)
+  let dt = deltaTime / (1000/60); 
+  time += params.speed * dt; 
+  colorTime += params.speed * 1.5 * dt;
+
   forcePoints.forEach(fp => {
-    fp.angle += fp.angleVel;
+    // 這裡的旋轉也要加入 dt 補償
+    fp.angle += fp.angleVel * dt;
     fp.pos.x = 220 * cos(fp.angle); fp.pos.y = 220 * sin(fp.angle);
     fp.strength = fp.isPermanent ? 140 : 80;
   });
+
   shader(myShader);
   myShader.setUniform('uIsHDR', isHDRSupported); 
   myShader.setUniform('r', [width * pixelDensity(), height * pixelDensity()]);
@@ -278,6 +287,7 @@ function draw() {
   myShader.setUniform('uBaseBright', params.baseBright); myShader.setUniform('uGlowBoost', params.glowBoost);
   myShader.setUniform('uCameraZ', params.cameraZ); myShader.setUniform('uSat', params.sat);
   myShader.setUniform('uDistort', params.distort); myShader.setUniform('uRingCount', params.ringCount);
+  
   let fPos = [], fStr = [], fRad = [];
   forcePoints.forEach(fp => {
     fPos.push(fp.pos.x * 0.02, fp.pos.y * 0.02, fp.pos.z * 0.02);
