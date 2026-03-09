@@ -2,31 +2,34 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>吳沅冠靈光雕塑系統</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; padding: 0; background-color: #000; overflow: hidden; }
-    canvas { display: block; }
+    body { margin: 0; padding: 0; background-color: #000; overflow: hidden; touch-action: none; }
+    
+    /* 🌟 核心修正：強制畫布永遠填滿視窗，且不隨縮放偏移 */
+    canvas { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100vw !important; 
+      height: 100vh !important; 
+      display: block; 
+    }
 
-    /* --- 左側控制 UI 容器 --- */
+    /* --- UI 容器 --- */
     #ui-wrapper-left {
-      position: absolute; bottom: 30px; left: 30px; z-index: 100; font-family: 'VT323', monospace;
+      position: fixed; bottom: 30px; left: 30px; z-index: 100; font-family: 'VT323', monospace;
     }
 
-    /* 🌟 狀態燈群組 (HDR & FPS) */
     #status-group {
-      position: absolute; top: -22px; left: 0; display: flex; gap: 12px;
-      pointer-events: none;
+      position: absolute; top: -22px; left: 0; display: flex; gap: 12px; pointer-events: none;
     }
-    .status-tag {
-      color: #ffffff; font-size: 14px; letter-spacing: 1px; opacity: 0;
-      transition: opacity 0.3s ease;
-    }
+    .status-tag { color: #ffffff; font-size: 14px; letter-spacing: 1px; opacity: 0; transition: opacity 0.3s ease; }
     .tag-visible { opacity: 0.9; }
 
-    /* 整合式控制面板 */
     #control-panel {
       display: flex; align-items: center; background: rgba(0, 0, 0, 0); 
       border: 1px solid #ffffff; width: 400px; height: 34px; overflow: hidden; 
@@ -69,7 +72,6 @@
     <div id="hdr-tag" class="status-tag">[HDR]</div>
     <div id="fps-tag" class="status-tag">[FPS:--]</div>
   </div>
-
   <div id="control-panel">
     <input type="text" id="coord-input" spellcheck="false" autocomplete="off">
     <button id="copy-btn" class="ui-btn" title="COPY">
@@ -126,8 +128,8 @@ void main() {
     vec2 uv = (gl_FragCoord.xy * 2.0 - r.xy) / min(r.x, r.y);
     o = vec4(0.0);
     float z = 0.0;
+    // 自適應步進優化
     float stepMult = 0.35 + (uRingCount * 0.005); 
-    
     for(int i = 0; i < 40; i++) {
         vec3 p_orig = z * normalize(vec3(uv, 1.8));
         p_orig.z -= uCameraZ; 
@@ -168,10 +170,16 @@ void main() {
 
 function setup() {
   isHDRSupported = window.matchMedia('(dynamic-range: high)').matches;
+  
+  // 🌟 初始化解析度適應
   const canvas = createCanvas(windowWidth, windowHeight, WEBGL);
   frameRate(60);
+  
   if (isHDRSupported) canvas.elt.getContext('webgl2', { colorSpace: 'display-p3', pixelFormat: 'float16' });
+  
+  // 🌟 鎖定像素密度
   pixelDensity(min(window.devicePixelRatio, 1.25));
+  
   myShader = createShader(vert, frag);
   for (let i = 0; i < 7; i++) {
     forcePoints.push({ pos: createVector(0,0,0), angle: random(TAU), isPermanent: i < 3, strength: 0, radius: random(200, 350), angleVel: random(0.01, 0.04) });
@@ -185,7 +193,6 @@ function setup() {
     fsBtn.style.display = 'none'; panel.style.width = '360px';
   }
 
-  // 🌟 統一更新燈號顯示狀態
   function updateTags() {
     if (currentStatus === "expanded") {
       fpsTag.classList.add('tag-visible');
@@ -274,12 +281,9 @@ function mousePressed() {
 
 function draw() {
   background(0);
-  
-  // 🌟 實時更新 FPS 顯示 (每 10 幀更新一次)
   if (frameCount % 10 === 0 && currentStatus === "expanded") {
     document.getElementById('fps-tag').innerText = `[FPS:${floor(frameRate())}]`;
   }
-
   let dt = deltaTime / (1000/60); 
   time += params.speed * dt; colorTime += params.speed * 1.5 * dt;
   forcePoints.forEach(fp => {
@@ -304,7 +308,13 @@ function draw() {
   myShader.setUniform('uForceRadius', fRad);
   rect(-width / 2, -height / 2, width, height);
 }
-function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+
+// 🌟 核心修正：當視窗大小變動或縮放比例變動時，重新校正 Canvas
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  // 確保縮放後 pixelDensity 依然準確
+  pixelDensity(min(window.devicePixelRatio, 1.25));
+}
 </script>
 </body>
 </html>
