@@ -53,7 +53,8 @@
 
     .blink { animation: blink-animation 1s steps(2, start) infinite; }
     @keyframes blink-animation { to { visibility: hidden; } }
-    .pixel-icon { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 1; }
+    /* 🌟 圖標更新：透明內部 */
+    .pixel-icon { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 1.2; }
   </style>
 </head>
 <body>
@@ -116,11 +117,18 @@ void main() {
     vec2 uv = (gl_FragCoord.xy * 2.0 - r.xy) / min(r.x, r.y);
     o = vec4(0.0);
     float z = 0.0;
+    
+    // 🌟 性能提升：自適應步進與精度平衡
+    // 當數量越高，單步位移稍微增大，顯著降低卡頓
+    float stepMult = 0.35 + (uRingCount * 0.005); 
+    
     for(int i = 0; i < 40; i++) {
         vec3 p_orig = z * normalize(vec3(uv, 1.8));
         p_orig.z -= uCameraZ; 
         p_orig = rotate3D(p_orig, vec3(uRot.x, uRot.y, 0.0));
+        
         float mD = 1e5;
+        // 支持手動挑戰超高數量 (最高 30 階)
         for(int j = 1; j <= 30; j++) { 
             float fj = float(j);
             if(fj > uRingCount) break; 
@@ -133,6 +141,7 @@ void main() {
             float d_ring = length(crossSection - vec2(sin(theta*2.0 + t), cos(theta*1.6 - t))*2.5) - 0.12;
             mD = smin(mD, d_ring, 0.85);
         }
+
         float rOffset = 0.0;
         for(int k = 0; k < 7; k++) {
             float dF = length(p_orig - uForcePos[k] * 1.8);
@@ -141,14 +150,17 @@ void main() {
                 rOffset += uForceStrength[k] * 4.0 * pct * pct;
             }
         }
+        
         float d = 0.2 * abs(mD) + 0.02;
-        z += d * 0.35; 
+        z += d * stepMult; 
+        
         float theta_main = atan(p_orig.y, p_orig.x);
         vec3 proceduralCol = cos(theta_main * 1.2 + ct + p_orig.y * 0.3 + vec3(0.0, 1.2, 2.5)) + uSat; 
         float plasmaAccum = (z * 0.12 / (d + 0.005)) + uBaseBright; 
         vec3 AccColor = (proceduralCol * plasmaAccum * 12.0) + (proceduralCol * rOffset * 0.15 * uGlowBoost);
         o += vec4(AccColor, 1.0); 
     }
+    
     if (uIsHDR) { o.rgb = o.rgb / 7000.0; } 
     else { o.rgb = ACESFilm(o.rgb / 2.8e4); }
     o.a = 1.0;
@@ -157,12 +169,9 @@ void main() {
 function setup() {
   isHDRSupported = window.matchMedia('(dynamic-range: high)').matches;
   const canvas = createCanvas(windowWidth, windowHeight, WEBGL);
-  
-  // 🌟 鎖定 60 幀穩定運作
   frameRate(60);
-  
   if (isHDRSupported) canvas.elt.getContext('webgl2', { colorSpace: 'display-p3', pixelFormat: 'float16' });
-  pixelDensity(min(window.devicePixelRatio, 1.5));
+  pixelDensity(min(window.devicePixelRatio, 1.25)); // 🌟 稍微降低 Retina 密度上限以保證穩定
   myShader = createShader(vert, frag);
   for (let i = 0; i < 7; i++) {
     forcePoints.push({ pos: createVector(0,0,0), angle: random(TAU), isPermanent: i < 3, strength: 0, radius: random(200, 350), angleVel: random(0.01, 0.04) });
@@ -212,14 +221,9 @@ function setup() {
   updateHdrTag(); syncUi();
 }
 
-function getCoordinateID() {
-  return `${params.ringCount}_${params.cameraZ.toFixed(1)}_${params.speed.toFixed(3)}_${params.baseBright.toFixed(2)}_${params.glowBoost.toFixed(0)}_${params.sat.toFixed(1)}_${params.distort.toFixed(1)}`;
-}
-
 function loadFromID(id) {
   let parts = id.split('_');
   if (parts.length === 7) {
-    // 🌟 實驗室權限解放：手動輸入時完全不限制數量
     params.ringCount = parseFloat(parts[0]) || 1; 
     params.cameraZ = parseFloat(parts[1]) || 5;
     params.speed = parseFloat(parts[2]) || 0.01;
@@ -231,8 +235,9 @@ function loadFromID(id) {
 }
 
 function syncUi() { document.getElementById('coord-input').value = getCoordinateID(); }
+function getCoordinateID() { return `${params.ringCount}_${params.cameraZ.toFixed(1)}_${params.speed.toFixed(3)}_${params.baseBright.toFixed(2)}_${params.glowBoost.toFixed(0)}_${params.sat.toFixed(1)}_${params.distort.toFixed(1)}`; }
 
-// 算力守護者：評估參數組合的消耗分數
+// 算力預算邏輯（針對隨機生成）
 function getComplexityScore(p) {
   return (p.ringCount * 1.5) + (p.distort * 2.5) + (p.glowBoost / 30) + (p.speed * 8);
 }
@@ -244,38 +249,34 @@ function mousePressed() {
 
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
     clickCount++;
-    
     let nextParams = {};
-    const MAX_BUDGET = 22; // 🌟 60幀下的算力預算總上限
+    const MAX_BUDGET = 20; 
     
     if (clickCount % 5 === 0) {
-      nextParams.ringCount = floor(random(1, 11)); // 隨機解放至 10
-      nextParams.speed = random(0.002, 0.2);
-      nextParams.distort = random(0.0, 2.5);
-      nextParams.glowBoost = random(0, 150);
-      nextParams.cameraZ = random(3.0, 30.0);
-      nextParams.baseBright = random(0.01, 1.2);
-      nextParams.sat = random(0.2, 3.0);
+      nextParams.ringCount = floor(random(1, 8)); 
+      nextParams.speed = random(0.002, 0.15);
+      nextParams.distort = random(0.0, 2.0);
+      nextParams.glowBoost = random(0, 120);
+      nextParams.cameraZ = random(3.0, 20.0);
+      nextParams.baseBright = random(0.01, 1.0);
+      nextParams.sat = random(0.2, 2.5);
     } else {
-      nextParams.ringCount = floor(random(1, 11));
-      nextParams.speed = random(0.01, 0.1);
-      nextParams.distort = random(0.1, 1.5);
-      nextParams.glowBoost = random(10, 80);
-      nextParams.cameraZ = random(4.5, 18.0);
-      nextParams.baseBright = random(0.1, 0.7);
-      nextParams.sat = random(0.6, 2.0);
+      nextParams.ringCount = floor(random(1, 7));
+      nextParams.speed = random(0.01, 0.08);
+      nextParams.distort = random(0.1, 1.2);
+      nextParams.glowBoost = random(10, 60);
+      nextParams.cameraZ = random(4.5, 15.0);
+      nextParams.baseBright = random(0.1, 0.6);
+      nextParams.sat = random(0.6, 1.8);
     }
 
-    // 動態平衡機制：若超過預算，自動壓低扭曲度與速度來平衡效能
     let attempts = 0;
     while (getComplexityScore(nextParams) > MAX_BUDGET && attempts < 10) {
       nextParams.distort *= 0.85;
       nextParams.speed *= 0.85;
-      nextParams.glowBoost *= 0.9;
       if (attempts > 5) nextParams.ringCount = max(1, nextParams.ringCount - 1);
       attempts++;
     }
-
     params = {...nextParams};
     syncUi();
   }
@@ -283,8 +284,6 @@ function mousePressed() {
 
 function draw() {
   background(0);
-  
-  // 60幀下依然保留 deltaTime 補償，確保即便電腦稍微延遲，動畫動態也保持穩定
   let dt = deltaTime / (1000/60); 
   time += params.speed * dt; 
   colorTime += params.speed * 1.5 * dt;
@@ -303,6 +302,7 @@ function draw() {
   myShader.setUniform('uBaseBright', params.baseBright); myShader.setUniform('uGlowBoost', params.glowBoost);
   myShader.setUniform('uCameraZ', params.cameraZ); myShader.setUniform('uSat', params.sat);
   myShader.setUniform('uDistort', params.distort); myShader.setUniform('uRingCount', params.ringCount);
+  
   let fPos = [], fStr = [], fRad = [];
   forcePoints.forEach(fp => {
     fPos.push(fp.pos.x * 0.02, fp.pos.y * 0.02, fp.pos.z * 0.02);
