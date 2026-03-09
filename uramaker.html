@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>吳沅冠雕塑生成系統 | 流暢動效版</title>
+  <title>吳沅冠雕塑生成系統 | 黃金比例定位版</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
@@ -21,7 +21,7 @@
       align-items: center;
     }
 
-    /* 🌟 控制面板：加入過渡動畫 */
+    /* 控制面板 */
     #control-panel {
       display: flex;
       align-items: center;
@@ -29,7 +29,7 @@
       border: 1px solid #ffffff;
       width: 320px;
       height: 34px;
-      overflow: hidden; /* 確保收束時內容被裁切 */
+      overflow: hidden; 
       
       /* 動畫核心設定 */
       transition: 
@@ -40,23 +40,24 @@
       opacity: 1;
     }
 
-    /* 🌟 收束狀態樣式 */
+    /* 收束狀態樣式 */
     #control-panel.is-collapsed {
       width: 0;
       opacity: 0;
       transform: scaleX(0);
       border-color: transparent;
-      pointer-events: none; /* 防止收束後還能點到輸入框 */
+      pointer-events: none; 
     }
 
     #coord-input {
       background: transparent;
       color: #ffffff;
       border: none;
-      padding: 0 10px;
+      /* 🌟 修改：調整 padding 以提升文字視覺位置 */
+      padding: 0 10px 2px 10px; /* 底部 padding 增加 */
       font-family: 'VT323', monospace;
       font-size: 18px;
-      width: 220px; /* 固定內部寬度防止抖動 */
+      width: 220px; 
       height: 100%;
       outline: none;
       letter-spacing: 1px;
@@ -76,7 +77,17 @@
     }
     .ui-btn:hover { opacity: 0.5; }
 
-    /* 🌟 收束後顯示的符號 */
+    /* 🌟 修改：針對收束按鈕進行微調 */
+    #collapse-btn {
+      font-family: 'VT323', monospace; /* 🌟 顯式設定字體 */
+      font-size: 20px;
+      padding: 0 8px; /* 🌟 修改：減少 padding */
+      min-width: 24px; /* 🌟 修改：確保按鈕有足夠寬度且內容居中 */
+      border-left: 1px solid rgba(255,255,255,0.3);
+      text-align: center; /* 🌟 新增：確保文字居中 */
+    }
+
+    /* 收束後顯示的 >_ */
     #collapsed-trigger {
       position: absolute;
       left: 0;
@@ -117,7 +128,7 @@
       </svg>
     </button>
 
-    <button id="collapse-btn" class="ui-btn" style="font-size:20px; border-left: 1px solid rgba(255,255,255,0.3);">
+    <button id="collapse-btn" class="ui-btn" title="COLLAPSE">
       &lt;
     </button>
   </div>
@@ -277,11 +288,11 @@ function syncUi() {
 }
 
 function mousePressed() {
-  // 判斷點擊區域是否為 UI
+  // 如果點擊區域為 UI，不觸發演化
   if (isUiFocused) return;
-  // 展開狀態下的屏蔽區
+  // 展開屏蔽
   if (currentStatus === "expanded" && (mouseY > height - 80 && mouseX < 380)) return;
-  // 收束狀態下的屏蔽區
+  // 收束屏蔽
   if (currentStatus === "collapsed" && (mouseY > height - 80 && mouseX < 100)) return;
 
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
