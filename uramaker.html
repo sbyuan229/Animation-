@@ -3,25 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>吳沅冠雕塑生成系統 | 像素工整版</title>
+  <title>吳沅冠雕塑生成系統 | 終端收束版</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
     body { margin: 0; padding: 0; background-color: #000; overflow: hidden; }
     canvas { display: block; }
 
-    /* --- 整合式像素控制列 --- */
-    #control-panel {
+    /* --- 核心 UI 容器 --- */
+    #ui-wrapper {
       position: absolute;
       bottom: 30px;
       left: 30px;
       z-index: 100;
+      font-family: 'VT323', monospace;
+    }
+
+    /* 完整控制列 */
+    #control-panel {
       display: flex;
       align-items: center;
       background: rgba(20, 20, 20, 0.8);
-      border: 1px solid #ffffff; /* 統一的外框 */
-      width: 280px; /* 固定寬度，保持工整 */
-      height: 34px; /* 減少高度 */
+      border: 1px solid #ffffff;
+      width: 320px; /* 稍微增加寬度以容納新按鈕 */
+      height: 34px;
+      transition: all 0.2s ease-out;
     }
 
     #coord-input {
@@ -37,8 +43,8 @@
       letter-spacing: 1px;
     }
 
-    /* 像素化複製按鈕 */
-    #copy-btn {
+    /* 按鈕通用樣式 */
+    .ui-btn {
       background: transparent;
       border: none;
       padding: 0 10px;
@@ -47,52 +53,64 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      color: white;
       transition: opacity 0.2s;
     }
+    .ui-btn:hover { opacity: 0.5; }
 
-    #copy-btn:hover {
-      opacity: 0.6;
+    /* 收束狀態符號 */
+    #collapsed-trigger {
+      display: none; /* 初始隱藏 */
+      color: #ffffff;
+      font-size: 24px;
+      cursor: pointer;
+      user-select: none;
+      background: transparent;
     }
 
-    #copy-btn:active {
-      transform: scale(0.9);
+    /* 閃爍底線動畫 */
+    .blink {
+      animation: blink-animation 1s steps(2, start) infinite;
+    }
+    @keyframes blink-animation {
+      to { visibility: hidden; }
     }
 
-    /* 像素風格 SVG 圖標 (由小方塊組成) */
-    .pixel-icon {
-      width: 18px;
-      height: 18px;
-    }
+    .pixel-icon { width: 16px; height: 16px; }
   </style>
 </head>
 <body>
 
-<div id="control-panel">
-  <input type="text" id="coord-input" spellcheck="false" autocomplete="off">
-  <button id="copy-btn" title="COPY COORDINATES">
-    <svg class="pixel-icon" viewBox="0 0 10 10" fill="white">
-      <rect x="0" y="2" width="6" height="6" />
-      <rect x="1" y="3" width="4" height="4" fill="black" />
-      <rect x="3" y="0" width="6" height="6" />
-      <rect x="4" y="1" width="4" height="4" fill="black" />
-      <rect x="5" y="2" width="2" height="2" fill="white" />
-    </svg>
-  </button>
+<div id="ui-wrapper">
+  <div id="control-panel">
+    <input type="text" id="coord-input" spellcheck="false" autocomplete="off">
+    
+    <button id="copy-btn" class="ui-btn" title="COPY">
+      <svg class="pixel-icon" viewBox="0 0 10 10" fill="white">
+        <rect x="0" y="2" width="6" height="6" />
+        <rect x="1" y="3" width="4" height="4" fill="black" />
+        <rect x="3" y="0" width="6" height="6" />
+        <rect x="4" y="1" width="4" height="4" fill="black" />
+        <rect x="5" y="2" width="2" height="2" fill="white" />
+      </svg>
+    </button>
+
+    <button id="collapse-btn" class="ui-btn" style="font-family:'VT323'; font-size:20px; border-left: 1px solid rgba(255,255,255,0.3);">
+      &lt;
+    </button>
+  </div>
+
+  <div id="collapsed-trigger">
+    &gt;<span class="blink">_</span>
+  </div>
 </div>
 
 <script>
 let myShader, time = 0, colorTime = 0, forcePoints = [], clickCount = 0;
 let isUiFocused = false;
+let isCollapsed = false;
 
-let params = {
-  ringCount: 6,
-  cameraZ: 8.5,
-  speed: 0.04,
-  baseBright: 0.35,
-  glowBoost: 40,
-  sat: 1.2,
-  distort: 0.5
-};
+let params = { ringCount: 6, cameraZ: 8.5, speed: 0.04, baseBright: 0.35, glowBoost: 40, sat: 1.2, distort: 0.5 };
 
 const vert = `#version 300 es
 precision highp float;
@@ -175,23 +193,37 @@ function setup() {
     forcePoints.push({ pos: createVector(0,0,0), angle: random(TAU), isPermanent: i < 3, strength: 0, radius: random(200, 350), angleVel: random(0.01, 0.04) });
   }
 
+  // --- UI 控制邏輯 ---
+  const panel = document.getElementById('control-panel');
+  const trigger = document.getElementById('collapsed-trigger');
+  const collapseBtn = document.getElementById('collapse-btn');
   const inputEl = document.getElementById('coord-input');
   const copyBtn = document.getElementById('copy-btn');
 
+  // 收束
+  collapseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    isCollapsed = true;
+    panel.style.display = 'none';
+    trigger.style.display = 'block';
+  });
+
+  // 展開
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    isCollapsed = false;
+    panel.style.display = 'flex';
+    trigger.style.display = 'none';
+  });
+
   inputEl.addEventListener('focus', () => isUiFocused = true);
   inputEl.addEventListener('blur', () => isUiFocused = false);
-  
-  inputEl.addEventListener('input', (e) => {
-    loadFromID(e.target.value);
-  });
+  inputEl.addEventListener('input', (e) => loadFromID(e.target.value));
 
   copyBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     inputEl.select();
     navigator.clipboard.writeText(inputEl.value);
-    
-    // 視覺回饋：白框閃爍
-    const panel = document.getElementById('control-panel');
     panel.style.borderColor = "#00ffcc";
     setTimeout(() => panel.style.borderColor = "#ffffff", 200);
   });
@@ -221,8 +253,10 @@ function syncUi() {
 }
 
 function mousePressed() {
-  // 判斷點擊是否在控制列區域內
-  if (isUiFocused || (mouseY > height - 80 && mouseX < 330)) return;
+  // 如果 UI 展開且點擊在 UI 區域內，或是處於收束狀態點擊了 trigger，則不觸發隨機演化
+  if (isUiFocused) return;
+  if (!isCollapsed && (mouseY > height - 80 && mouseX < 380)) return;
+  if (isCollapsed && (mouseY > height - 80 && mouseX < 100)) return;
 
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
     clickCount++;
@@ -251,14 +285,12 @@ function draw() {
   background(0);
   time += params.speed; 
   colorTime += params.speed * 1.5;
-  
   forcePoints.forEach(fp => {
     fp.angle += fp.angleVel;
     fp.pos.x = 220 * cos(fp.angle); 
     fp.pos.y = 220 * sin(fp.angle);
     fp.strength = fp.isPermanent ? 140 : 80;
   });
-
   shader(myShader);
   myShader.setUniform('r', [width * pixelDensity(), height * pixelDensity()]);
   myShader.setUniform('t', time);
@@ -270,7 +302,6 @@ function draw() {
   myShader.setUniform('uSat', params.sat);
   myShader.setUniform('uDistort', params.distort);
   myShader.setUniform('uRingCount', params.ringCount);
-
   let fPos = [], fStr = [], fRad = [];
   forcePoints.forEach(fp => {
     fPos.push(fp.pos.x * 0.02, fp.pos.y * 0.02, fp.pos.z * 0.02);
