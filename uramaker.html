@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>吳沅冠雕塑生成系統 | 黃金比例定位版</title>
+  <title>吳沅冠雕塑生成系統 | 精準工業版</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
@@ -21,26 +21,26 @@
       align-items: center;
     }
 
-    /* 控制面板 */
+    /* 🌟 控制面板：背景透明度降為 0，優化過渡動畫 */
     #control-panel {
       display: flex;
       align-items: center;
-      background: rgba(20, 20, 20, 0.8);
+      background: rgba(0, 0, 0, 0); /* 🌟 透明背景 */
       border: 1px solid #ffffff;
       width: 320px;
       height: 34px;
       overflow: hidden; 
       
-      /* 動畫核心設定 */
+      /* 🌟 絲滑動畫設定 */
       transition: 
-        width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-        opacity 0.2s ease,
-        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
+        opacity 0.3s ease,
+        transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
       transform-origin: left center;
       opacity: 1;
     }
 
-    /* 收束狀態樣式 */
+    /* 收束狀態 */
     #control-panel.is-collapsed {
       width: 0;
       opacity: 0;
@@ -53,8 +53,7 @@
       background: transparent;
       color: #ffffff;
       border: none;
-      /* 🌟 修改：調整 padding 以提升文字視覺位置 */
-      padding: 0 10px 2px 10px; /* 底部 padding 增加 */
+      padding: 0 10px 2px 10px; /* 提升文字視覺位置 */
       font-family: 'VT323', monospace;
       font-size: 18px;
       width: 220px; 
@@ -66,28 +65,27 @@
     .ui-btn {
       background: transparent;
       border: none;
-      padding: 0 10px;
       height: 100%;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
-      transition: opacity 0.2s;
+      transition: all 0.2s ease;
     }
-    .ui-btn:hover { opacity: 0.5; }
+    .ui-btn:hover { opacity: 0.5; background: rgba(255,255,255,0.1); }
 
-    /* 🌟 修改：針對收束按鈕進行微調 */
+    /* 🌟 修改：收束按鈕 < 絕對水平居中 */
     #collapse-btn {
-      font-family: 'VT323', monospace; /* 🌟 顯式設定字體 */
+      font-family: 'VT323', monospace;
       font-size: 20px;
-      padding: 0 8px; /* 🌟 修改：減少 padding */
-      min-width: 24px; /* 🌟 修改：確保按鈕有足夠寬度且內容居中 */
-      border-left: 1px solid rgba(255,255,255,0.3);
-      text-align: center; /* 🌟 新增：確保文字居中 */
+      width: 34px; /* 與高度相同，形成正方形區域 */
+      padding: 0;
+      border-left: 1px solid rgba(255,255,255,0.5);
+      flex-shrink: 0; /* 防止寬度被壓縮 */
     }
 
-    /* 收束後顯示的 >_ */
+    /* 收束後的 >_ */
     #collapsed-trigger {
       position: absolute;
       left: 0;
@@ -97,13 +95,15 @@
       user-select: none;
       background: transparent;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.4s ease, transform 0.3s ease;
       pointer-events: none;
+      transform: translateX(-10px);
     }
 
     #collapsed-trigger.active {
       opacity: 1;
       pointer-events: auto;
+      transform: translateX(0);
     }
 
     .blink { animation: blink-animation 1s steps(2, start) infinite; }
@@ -118,7 +118,7 @@
   <div id="control-panel">
     <input type="text" id="coord-input" spellcheck="false" autocomplete="off">
     
-    <button id="copy-btn" class="ui-btn" title="COPY">
+    <button id="copy-btn" class="ui-btn" title="COPY" style="width: 40px; border-left: 1px solid rgba(255,255,255,0.3);">
       <svg class="pixel-icon" viewBox="0 0 10 10" fill="white">
         <rect x="0" y="2" width="6" height="6" />
         <rect x="1" y="3" width="4" height="4" fill="black" />
@@ -141,8 +141,9 @@
 <script>
 let myShader, time = 0, colorTime = 0, forcePoints = [], clickCount = 0;
 let isUiFocused = false;
-let currentStatus = "expanded"; // expanded or collapsed
+let currentStatus = "expanded";
 
+// 初始參數 (ringCount 已限制為 6)
 let params = { ringCount: 6, cameraZ: 8.5, speed: 0.04, baseBright: 0.35, glowBoost: 40, sat: 1.2, distort: 0.5 };
 
 const vert = `#version 300 es
@@ -187,7 +188,7 @@ void main() {
         float mD = 1e5;
         for(int j = 1; j <= 12; j++) {
             float fj = float(j);
-            if(fj > uRingCount) break;
+            if(fj > uRingCount) break; // 🌟 Shader 層級也會尊重數量限制
             vec3 p = p_orig;
             p = rotate3D(p, uRot * (0.3 + fj * 0.1) + fj * 2.5);
             float theta = atan(p.y, p.x);
@@ -226,24 +227,19 @@ function setup() {
     forcePoints.push({ pos: createVector(0,0,0), angle: random(TAU), isPermanent: i < 3, strength: 0, radius: random(200, 350), angleVel: random(0.01, 0.04) });
   }
 
-  // --- UI 事件處理 ---
   const panel = document.getElementById('control-panel');
   const trigger = document.getElementById('collapsed-trigger');
   const collapseBtn = document.getElementById('collapse-btn');
   const inputEl = document.getElementById('coord-input');
   const copyBtn = document.getElementById('copy-btn');
 
-  // 收束動作
   collapseBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     currentStatus = "collapsed";
     panel.classList.add('is-collapsed');
-    setTimeout(() => {
-      trigger.classList.add('active');
-    }, 200); // 稍微延遲顯示 >_ 增加視覺層次感
+    setTimeout(() => { trigger.classList.add('active'); }, 200);
   });
 
-  // 展開動作
   trigger.addEventListener('click', (e) => {
     e.stopPropagation();
     currentStatus = "expanded";
@@ -273,7 +269,8 @@ function getCoordinateID() {
 function loadFromID(id) {
   let parts = id.split('_');
   if (parts.length === 7) {
-    params.ringCount = parseFloat(parts[0]) || 1;
+    // 🌟 核心修改：輸入時也會限制數量不大於 7
+    params.ringCount = min(max(parseFloat(parts[0]) || 1, 1), 7);
     params.cameraZ = parseFloat(parts[1]) || 5;
     params.speed = parseFloat(parts[2]) || 0.01;
     params.baseBright = parseFloat(parts[3]) || 0.1;
@@ -288,17 +285,15 @@ function syncUi() {
 }
 
 function mousePressed() {
-  // 如果點擊區域為 UI，不觸發演化
   if (isUiFocused) return;
-  // 展開屏蔽
   if (currentStatus === "expanded" && (mouseY > height - 80 && mouseX < 380)) return;
-  // 收束屏蔽
   if (currentStatus === "collapsed" && (mouseY > height - 80 && mouseX < 100)) return;
 
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
     clickCount++;
     if (clickCount % 5 === 0) {
-      params.ringCount = params.ringCount < 5 ? floor(random(9, 12)) : floor(random(1, 3)); 
+      // 🌟 核心修改：隨機生成時限制數量不大於 7 (4-7) 或 (1-3)
+      params.ringCount = params.ringCount < 4 ? floor(random(5, 8)) : floor(random(1, 4)); 
       params.cameraZ = params.cameraZ < 10.0 ? random(20.0, 30.0) : random(3.0, 5.0); 
       params.speed = params.speed < 0.05 ? random(0.12, 0.2) : random(0.002, 0.008); 
       params.baseBright = params.baseBright > 0.4 ? random(0.01, 0.1) : random(0.7, 1.2); 
@@ -306,7 +301,8 @@ function mousePressed() {
       params.sat = params.sat > 1.2 ? random(0.2, 0.6) : random(2.0, 3.0); 
       params.distort = params.distort > 0.8 ? 0.0 : random(1.5, 2.5); 
     } else {
-      params.ringCount = floor(random(1, 9)); 
+      // 🌟 核心修改：隨機生成時限制數量不大於 7 (1-7)
+      params.ringCount = floor(random(1, 8)); 
       params.cameraZ = random(4.5, 18.0);      
       params.speed = random(0.01, 0.1);      
       params.baseBright = random(0.1, 0.7);   
