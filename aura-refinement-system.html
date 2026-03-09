@@ -10,19 +10,23 @@
     body { margin: 0; padding: 0; background-color: #000; overflow: hidden; }
     canvas { display: block; }
 
-    /* --- 核心 UI 容器 --- */
+    /* --- 左側控制 UI 容器 --- */
     #ui-wrapper-left {
       position: absolute; bottom: 30px; left: 30px; z-index: 100; font-family: 'VT323', monospace;
     }
 
-    #hdr-tag {
-      position: absolute; top: -22px; left: 0; color: #ffffff; font-size: 14px;
-      letter-spacing: 1px; opacity: 0; transition: opacity 0.3s ease;
-      pointer-events: none; display: none;
+    /* 🌟 狀態燈群組 (HDR & FPS) */
+    #status-group {
+      position: absolute; top: -22px; left: 0; display: flex; gap: 12px;
+      pointer-events: none;
     }
-    #hdr-tag.visible { display: block; opacity: 0.9; }
+    .status-tag {
+      color: #ffffff; font-size: 14px; letter-spacing: 1px; opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .tag-visible { opacity: 0.9; }
 
-    /* 🌟 控制面板：寬度增加至 400px 確保座標完整顯示 */
+    /* 整合式控制面板 */
     #control-panel {
       display: flex; align-items: center; background: rgba(0, 0, 0, 0); 
       border: 1px solid #ffffff; width: 400px; height: 34px; overflow: hidden; 
@@ -37,7 +41,6 @@
       font-size: 18px; flex-grow: 1; height: 100%; outline: none; letter-spacing: 1px;
     }
 
-    /* 統一按鈕樣式 */
     .ui-btn {
       background: transparent; border: none; border-left: 1px solid rgba(255,255,255,0.4);
       height: 100%; width: 40px; cursor: pointer; display: flex; align-items: center;
@@ -62,7 +65,11 @@
 <body>
 
 <div id="ui-wrapper-left">
-  <div id="hdr-tag">[HDR]</div>
+  <div id="status-group">
+    <div id="hdr-tag" class="status-tag">[HDR]</div>
+    <div id="fps-tag" class="status-tag">[FPS:--]</div>
+  </div>
+
   <div id="control-panel">
     <input type="text" id="coord-input" spellcheck="false" autocomplete="off">
     <button id="copy-btn" class="ui-btn" title="COPY">
@@ -171,28 +178,34 @@ function setup() {
   }
 
   const panel = document.getElementById('control-panel'), trigger = document.getElementById('collapsed-trigger');
-  const collapseBtn = document.getElementById('collapse-btn'), hdrTag = document.getElementById('hdr-tag');
+  const collapseBtn = document.getElementById('collapse-btn'), hdrTag = document.getElementById('hdr-tag'), fpsTag = document.getElementById('fps-tag');
   const inputEl = document.getElementById('coord-input'), fsBtn = document.getElementById('fs-btn');
 
   if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) {
     fsBtn.style.display = 'none'; panel.style.width = '360px';
   }
 
-  function updateHdrTag() {
-    if (isHDRSupported && currentStatus === "expanded") hdrTag.classList.add('visible');
-    else hdrTag.classList.remove('visible');
+  // 🌟 統一更新燈號顯示狀態
+  function updateTags() {
+    if (currentStatus === "expanded") {
+      fpsTag.classList.add('tag-visible');
+      if (isHDRSupported) hdrTag.classList.add('tag-visible');
+    } else {
+      fpsTag.classList.remove('tag-visible');
+      hdrTag.classList.remove('tag-visible');
+    }
   }
 
   collapseBtn.addEventListener('click', (e) => {
     e.stopPropagation(); currentStatus = "collapsed";
-    panel.classList.add('is-collapsed'); updateHdrTag();
+    panel.classList.add('is-collapsed'); updateTags();
     setTimeout(() => { trigger.classList.add('active'); }, 200);
   });
 
   trigger.addEventListener('click', (e) => {
     e.stopPropagation(); currentStatus = "expanded";
     trigger.classList.remove('active'); panel.classList.remove('is-collapsed');
-    setTimeout(updateHdrTag, 100);
+    setTimeout(updateTags, 100);
   });
 
   fsBtn.addEventListener('click', (e) => {
@@ -211,18 +224,15 @@ function setup() {
     panel.style.borderColor = "#00ffcc"; setTimeout(() => panel.style.borderColor = "#ffffff", 200);
   });
 
-  updateHdrTag(); syncUi();
+  updateTags(); syncUi();
 }
 
 function loadFromID(id) {
   let parts = id.split('_');
   if (parts.length === 7) {
-    params.ringCount = parseFloat(parts[0]) || 1; 
-    params.cameraZ = parseFloat(parts[1]) || 5;
-    params.speed = parseFloat(parts[2]) || 0.01;
-    params.baseBright = parseFloat(parts[3]) || 0.1;
-    params.glowBoost = parseFloat(parts[4]) || 0;
-    params.sat = parseFloat(parts[5]) || 1;
+    params.ringCount = parseFloat(parts[0]) || 1; params.cameraZ = parseFloat(parts[1]) || 5;
+    params.speed = parseFloat(parts[2]) || 0.01; params.baseBright = parseFloat(parts[3]) || 0.1;
+    params.glowBoost = parseFloat(parts[4]) || 0; params.sat = parseFloat(parts[5]) || 1;
     params.distort = parseFloat(parts[6]) || 0;
   }
 }
@@ -230,13 +240,10 @@ function loadFromID(id) {
 function syncUi() { document.getElementById('coord-input').value = getCoordinateID(); }
 function getCoordinateID() { return `${params.ringCount}_${params.cameraZ.toFixed(1)}_${params.speed.toFixed(3)}_${params.baseBright.toFixed(2)}_${params.glowBoost.toFixed(0)}_${params.sat.toFixed(1)}_${params.distort.toFixed(1)}`; }
 
-function getComplexityScore(p) {
-  return (p.ringCount * 1.5) + (p.distort * 2.5) + (p.glowBoost / 30) + (p.speed * 8);
-}
+function getComplexityScore(p) { return (p.ringCount * 1.5) + (p.distort * 2.5) + (p.glowBoost / 30) + (p.speed * 8); }
 
 function mousePressed() {
   if (isUiFocused) return;
-  // 🌟 屏蔽區域寬度同步調整
   if (currentStatus === "expanded" && (mouseY > height - 80 && mouseX < 460)) return;
   if (currentStatus === "collapsed" && (mouseY > height - 80 && mouseX < 100)) return;
 
@@ -245,20 +252,14 @@ function mousePressed() {
     let nextParams = {};
     const MAX_BUDGET = 20; 
     if (clickCount % 5 === 0) {
-      nextParams.ringCount = floor(random(1, 8)); 
-      nextParams.speed = random(0.002, 0.15);
-      nextParams.distort = random(0.0, 2.0);
-      nextParams.glowBoost = random(0, 120);
-      nextParams.cameraZ = random(3.0, 20.0);
-      nextParams.baseBright = random(0.01, 1.0);
+      nextParams.ringCount = floor(random(1, 8)); nextParams.speed = random(0.002, 0.15);
+      nextParams.distort = random(0.0, 2.0); nextParams.glowBoost = random(0, 120);
+      nextParams.cameraZ = random(3.0, 20.0); nextParams.baseBright = random(0.01, 1.0);
       nextParams.sat = random(0.2, 2.5);
     } else {
-      nextParams.ringCount = floor(random(1, 7));
-      nextParams.speed = random(0.01, 0.08);
-      nextParams.distort = random(0.1, 1.2);
-      nextParams.glowBoost = random(10, 60);
-      nextParams.cameraZ = random(4.5, 15.0);
-      nextParams.baseBright = random(0.1, 0.6);
+      nextParams.ringCount = floor(random(1, 7)); nextParams.speed = random(0.01, 0.08);
+      nextParams.distort = random(0.1, 1.2); nextParams.glowBoost = random(10, 60);
+      nextParams.cameraZ = random(4.5, 15.0); nextParams.baseBright = random(0.1, 0.6);
       nextParams.sat = random(0.6, 1.8);
     }
     let attempts = 0;
@@ -273,6 +274,12 @@ function mousePressed() {
 
 function draw() {
   background(0);
+  
+  // 🌟 實時更新 FPS 顯示 (每 10 幀更新一次)
+  if (frameCount % 10 === 0 && currentStatus === "expanded") {
+    document.getElementById('fps-tag').innerText = `[FPS:${floor(frameRate())}]`;
+  }
+
   let dt = deltaTime / (1000/60); 
   time += params.speed * dt; colorTime += params.speed * 1.5 * dt;
   forcePoints.forEach(fp => {
