@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>吳沅冠雕塑生成系統 | IBM VGA8 視覺版</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 0; background-color: #000; overflow: hidden; }
+    canvas { display: block; }
+
+    /* --- IBM VGA8 風格控制列 --- */
+    #control-panel {
+      position: absolute;
+      bottom: 30px;
+      left: 30px;
+      display: flex;
+      align-items: center;
+      gap: 0px; /* 緊湊排版 */
+      z-index: 100;
+    }
+
+    #coord-input {
+      background: rgba(20, 20, 20, 0.8);
+      color: #00ffcc; /* 電子綠噴漆感 */
+      border: 1px solid #ffffff;
+      padding: 10px 15px;
+      font-family: 'VT323', monospace; /* 🌟 應用 VGA 字體 */
+      font-size: 20px; /* 像素字體建議放大一點較清晰 */
+      width: 350px;
+      outline: none;
+      letter-spacing: 1px;
+    }
+
+    #copy-btn {
+      background: #ffffff;
+      color: #000000;
+      border: 1px solid #ffffff;
+      padding: 10px 20px;
+      font-family: 'VT323', monospace; /* 🌟 應用 VGA 字體 */
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      font-weight: bold;
+    }
+
+    #copy-btn:hover {
+      background: #00ffcc;
+      border-color: #00ffcc;
+    }
+
+    #copy-btn:active {
+      transform: translateY(2px);
+    }
+
+    /* 左下角提示標籤 */
+    #hint {
+      position: absolute;
+      bottom: 80px;
+      left: 30px;
+      color: #ffffff;
+      font-family: 'VT323', monospace; /* 🌟 應用 VGA 字體 */
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+
+<div id="hint">SYSTEM_CORE_COORDINATES // VGA_MODE</div>
+<div id="control-panel">
+  <input type="text" id="coord-input" spellcheck="false" autocomplete="off">
+  <button id="copy-btn">COPY</button>
+</div>
+
+<script>
+let myShader, time = 0, colorTime = 0, forcePoints = [], clickCount = 0;
+let isUiFocused = false;
+
+let params = {
+  ringCount: 6,
+  cameraZ: 8.5,
+  speed: 0.04,
+  baseBright: 0.35,
+  glowBoost: 40,
+  sat: 1.2,
+  distort: 0.5
+};
+
+const vert = `#version 300 es
+precision highp float;
+in vec3 aPosition;
+void main() { gl_Position = vec4(aPosition.xy * 2.0 - 1.0, 0.0, 1.0); }`;
+
+const frag = `#version 300 es
+precision highp float;
+uniform vec2 r;
+uniform float t, ct;
+uniform vec3 uRot;
+uniform float uBaseBright, uGlowBoost, uCameraZ, uSat, uDistort, uRingCount;
+uniform vec3 uForcePos[7];
+uniform float uForceStrength[7];
+uniform float uForceRadius[7];
+out vec4 o;
+
+float cheapNoise(vec3 p) {
+    float n = sin(p.x * 2.2 + p.y * 1.5 + p.z * 1.2) + sin(p.x * 1.5 - p.y * 2.1 + p.z * 1.8);
+    return n * 0.4;
+}
+float smin(float a, float b, float k) {
+    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+    return mix(b, a, h) - k * h * (1.0 - h);
+}
+mat2 rot(float a) { float s = sin(a), c = cos(a); return mat2(c, -s, s, c); }
+vec3 rotate3D(vec3 p, vec3 r_ang) {
+    p.yz *= rot(r_ang.x); p.xz *= rot(r_ang.y); p.xy *= rot(r_ang.z);
+    return p;
+}
+vec3 ACESFilm(vec3 x) { return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }
+
+void main() {
+    vec2 uv = (gl_FragCoord.xy * 2.0 - r.xy) / min(r.x, r.y);
+    o = vec4(0.0);
+    float z = 0.0;
+    for(int i = 0; i < 40; i++) {
+        vec3 p_orig = z * normalize(vec3(uv, 1.8));
+        p_orig.z -= uCameraZ; 
+        p_orig = rotate3D(p_orig, uRot);
+        float mD = 1e5;
+        for(int j = 1; j <= 12; j++) {
+            float fj = float(j);
+            if(fj > uRingCount) break;
+            vec3 p = p_orig;
+            p = rotate3D(p, uRot * (0.3 + fj * 0.1) + fj * 2.5);
+            float theta = atan(p.y, p.x);
+            float disto = cheapNoise(vec3(p.x * 0.5, p.y * 0.5, t * 0.5 + fj)) * uDistort;
+            float dynamicR = (2.2 + fj * 0.6) + disto + sin(theta * (2.0 + fj * 0.2) + t) * 0.2;
+            vec2 crossSection = vec2(length(p.xy) - dynamicR, p.z);
+            float d_ring = length(crossSection - vec2(sin(theta*2.0 + t), cos(theta*1.6 - t))*2.5) - 0.12;
+            mD = smin(mD, d_ring, 0.85);
+        }
+        float rOffset = 0.0;
+        for(int k = 0; k < 7; k++) {
+            float dF = length(p_orig - uForcePos[k] * 1.8);
+            if(dF < uForceRadius[k] * 1.5) {
+                float pct = 1.0 - (dF / (uForceRadius[k] * 1.5));
+                rOffset += uForceStrength[k] * 4.0 * pct * pct;
+            }
+        }
+        float d = 0.2 * abs(mD) + 0.02;
+        z += d * 0.35; 
+        float theta_main = atan(p_orig.y, p_orig.x);
+        vec3 proceduralCol = cos(theta_main * 1.2 + ct + p_orig.y * 0.3 + vec3(0.0, 1.2, 2.5)) + uSat; 
+        float plasmaAccum = (z * 0.12 / (d + 0.005)) + uBaseBright; 
+        vec3 AccColor = (proceduralCol * plasmaAccum * 12.0) + (proceduralCol * rOffset * 0.15 * uGlowBoost);
+        o += vec4(AccColor, 1.0); 
+    }
+    o.rgb = ACESFilm(o.rgb / 2.8e4);
+    o.a = 1.0;
+}`;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight, WEBGL);
+  pixelDensity(min(window.devicePixelRatio, 1.5));
+  myShader = createShader(vert, frag);
+  
+  for (let i = 0; i < 7; i++) {
+    forcePoints.push({ pos: createVector(0,0,0), angle: random(TAU), isPermanent: i < 3, strength: 0, radius: random(200, 350), angleVel: random(0.01, 0.04) });
+  }
+
+  const inputEl = document.getElementById('coord-input');
+  const copyBtn = document.getElementById('copy-btn');
+
+  inputEl.addEventListener('focus', () => isUiFocused = true);
+  inputEl.addEventListener('blur', () => isUiFocused = false);
+  
+  inputEl.addEventListener('input', (e) => {
+    loadFromID(e.target.value);
+  });
+
+  copyBtn.addEventListener('click', () => {
+    inputEl.select();
+    navigator.clipboard.writeText(inputEl.value);
+    const originalText = copyBtn.innerText;
+    copyBtn.innerText = "DONE!";
+    setTimeout(() => copyBtn.innerText = originalText, 1000);
+  });
+
+  syncUi();
+}
+
+function getCoordinateID() {
+  return `${params.ringCount}_${params.cameraZ.toFixed(1)}_${params.speed.toFixed(3)}_${params.baseBright.toFixed(2)}_${params.glowBoost.toFixed(0)}_${params.sat.toFixed(1)}_${params.distort.toFixed(1)}`;
+}
+
+function loadFromID(id) {
+  let parts = id.split('_');
+  if (parts.length === 7) {
+    params.ringCount = parseFloat(parts[0]) || 1;
+    params.cameraZ = parseFloat(parts[1]) || 5;
+    params.speed = parseFloat(parts[2]) || 0.01;
+    params.baseBright = parseFloat(parts[3]) || 0.1;
+    params.glowBoost = parseFloat(parts[4]) || 0;
+    params.sat = parseFloat(parts[5]) || 1;
+    params.distort = parseFloat(parts[6]) || 0;
+  }
+}
+
+function syncUi() {
+  document.getElementById('coord-input').value = getCoordinateID();
+}
+
+function mousePressed() {
+  if (isUiFocused || (mouseY > height - 100 && mouseX < 500)) return;
+
+  if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+    clickCount++;
+    if (clickCount % 5 === 0) {
+      params.ringCount = params.ringCount < 5 ? floor(random(9, 12)) : floor(random(1, 3)); 
+      params.cameraZ = params.cameraZ < 10.0 ? random(20.0, 30.0) : random(3.0, 5.0); 
+      params.speed = params.speed < 0.05 ? random(0.12, 0.2) : random(0.002, 0.008); 
+      params.baseBright = params.baseBright > 0.4 ? random(0.01, 0.1) : random(0.7, 1.2); 
+      params.glowBoost = params.glowBoost < 40 ? random(100, 150) : random(0, 15); 
+      params.sat = params.sat > 1.2 ? random(0.2, 0.6) : random(2.0, 3.0); 
+      params.distort = params.distort > 0.8 ? 0.0 : random(1.5, 2.5); 
+    } else {
+      params.ringCount = floor(random(1, 9)); 
+      params.cameraZ = random(4.5, 18.0);      
+      params.speed = random(0.01, 0.1);      
+      params.baseBright = random(0.1, 0.7);   
+      params.glowBoost = random(10, 80);      
+      params.sat = random(0.6, 2.0);           
+      params.distort = random(0.1, 1.5);       
+    }
+    syncUi();
+  }
+}
+
+function draw() {
+  background(0);
+  time += params.speed; 
+  colorTime += params.speed * 1.5;
+  
+  forcePoints.forEach(fp => {
+    fp.angle += fp.angleVel;
+    fp.pos.x = 220 * cos(fp.angle); 
+    fp.pos.y = 220 * sin(fp.angle);
+    fp.strength = fp.isPermanent ? 140 : 80;
+  });
+
+  shader(myShader);
+  myShader.setUniform('r', [width * pixelDensity(), height * pixelDensity()]);
+  myShader.setUniform('t', time);
+  myShader.setUniform('ct', colorTime);
+  myShader.setUniform('uRot', [frameCount * 0.005, frameCount * 0.003, frameCount * 0.002]);
+  myShader.setUniform('uBaseBright', params.baseBright);
+  myShader.setUniform('uGlowBoost', params.glowBoost);
+  myShader.setUniform('uCameraZ', params.cameraZ);
+  myShader.setUniform('uSat', params.sat);
+  myShader.setUniform('uDistort', params.distort);
+  myShader.setUniform('uRingCount', params.ringCount);
+
+  let fPos = [], fStr = [], fRad = [];
+  forcePoints.forEach(fp => {
+    fPos.push(fp.pos.x * 0.02, fp.pos.y * 0.02, fp.pos.z * 0.02);
+    fStr.push(fp.strength * 0.0016); fRad.push(fp.radius * 0.012);
+  });
+  myShader.setUniform('uForcePos', fPos);
+  myShader.setUniform('uForceStrength', fStr);
+  myShader.setUniform('uForceRadius', fRad);
+  rect(-width / 2, -height / 2, width, height);
+}
+
+function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+</script>
+</body>
+</html>
