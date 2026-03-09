@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>吳沅冠雕塑生成系統 | 穩定絲滑互動版</title>
+  <title>吳沅冠雕塑生成系統 | 黃金平衡絲滑版</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
   <style>
     body {
@@ -20,7 +20,6 @@ let myShader;
 let time = 0, colorTime = 0, forcePoints = [];
 let clickCount = 0; 
 
-// 初始設定
 let params = {
   ringCount: 6,
   cameraZ: 8.5,
@@ -73,8 +72,8 @@ void main() {
     o = vec4(0.0);
     float z = 0.0;
     
-    // 🌟 優化 1：步進控制從 45 降為 30 次，大幅減輕 GPU 負擔
-    for(int i = 0; i < 30; i++) {
+    // 🔥 恢復深度：將步進次數提升到 40，找回被閹割的立體感與細節
+    for(int i = 0; i < 40; i++) {
         vec3 p_orig = z * normalize(vec3(uv, 1.8));
         p_orig.z -= uCameraZ; 
         p_orig = rotate3D(p_orig, uRot);
@@ -122,9 +121,9 @@ void main() {
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   
-  // 🌟 優化 2：強制 1:1 像素渲染並鎖定 30 幀，避免高解析度螢幕卡頓
-  pixelDensity(1);
-  frameRate(30);
+  // 🔥 解除封印：移除 frameRate(30)，讓瀏覽器以滿血 60 幀運行
+  // 🔥 聰明縮放：限制最大像素密度為 1.5（原本 Retina 是 2 或 3 會太卡，設為 1 會太糊）
+  pixelDensity(min(window.devicePixelRatio, 1.5));
   
   myShader = createShader(vert, frag);
   
@@ -141,7 +140,6 @@ function setup() {
 }
 
 function mousePressed() {
-  // 確保點擊發生在畫面內
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
     clickCount++;
     
@@ -181,8 +179,8 @@ function draw() {
 
   shader(myShader);
   
-  // 🌟 優化 3：配合 pixelDensity(1)，直接傳入 width 與 height
-  myShader.setUniform('r', [width, height]);
+  // 🔥 動態校正：配合智能像素密度，確保畫面不會跑版
+  myShader.setUniform('r', [width * pixelDensity(), height * pixelDensity()]);
   
   myShader.setUniform('t', time);
   myShader.setUniform('ct', colorTime);
