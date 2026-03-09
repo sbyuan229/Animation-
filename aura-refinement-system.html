@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>靈光雕塑系統</title>
+  <title>吳沅冠雕塑生成系統 | 雙端對稱全螢幕版</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
     body { margin: 0; padding: 0; background-color: #000; overflow: hidden; }
     canvas { display: block; }
 
-    /* --- UI 容器 --- */
-    #ui-wrapper {
+    /* --- 左側控制列容器 --- */
+    #ui-wrapper-left {
       position: absolute;
       bottom: 30px;
       left: 30px;
@@ -21,39 +21,44 @@
       align-items: center;
     }
 
-    /* 🌟 控制面板：背景透明度降為 0，優化過渡動畫 */
+    /* --- 右側全螢幕按鈕 --- */
+    #fullscreen-btn {
+      position: absolute;
+      bottom: 30px;
+      right: 30px; /* 🌟 與左側距離一致 */
+      z-index: 100;
+      width: 34px; /* 🌟 與高度一致，形成正方形 */
+      height: 34px;
+      background: rgba(0, 0, 0, 0);
+      border: 1px solid #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    #fullscreen-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+    /* 控制面板：全透明背景，過渡動畫 */
     #control-panel {
       display: flex;
       align-items: center;
-      background: rgba(0, 0, 0, 0); /* 🌟 透明背景 */
+      background: rgba(0, 0, 0, 0);
       border: 1px solid #ffffff;
       width: 320px;
       height: 34px;
       overflow: hidden; 
-      
-      /* 🌟 絲滑動畫設定 */
-      transition: 
-        width 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
-        opacity 0.3s ease,
-        transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+      transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
       transform-origin: left center;
-      opacity: 1;
     }
 
-    /* 收束狀態 */
-    #control-panel.is-collapsed {
-      width: 0;
-      opacity: 0;
-      transform: scaleX(0);
-      border-color: transparent;
-      pointer-events: none; 
-    }
+    #control-panel.is-collapsed { width: 0; opacity: 0; transform: scaleX(0); border-color: transparent; pointer-events: none; }
 
     #coord-input {
       background: transparent;
       color: #ffffff;
       border: none;
-      padding: 0 10px 2px 10px; /* 提升文字視覺位置 */
+      padding: 0 10px 4px 10px; /* 🌟 文字視覺位置提升 */
       font-family: 'VT323', monospace;
       font-size: 18px;
       width: 220px; 
@@ -75,75 +80,65 @@
     }
     .ui-btn:hover { opacity: 0.5; background: rgba(255,255,255,0.1); }
 
-    /* 🌟 修改：收束按鈕 < 絕對水平居中 */
+    /* 收束按鈕置中修正 */
     #collapse-btn {
       font-family: 'VT323', monospace;
       font-size: 20px;
-      width: 34px; /* 與高度相同，形成正方形區域 */
+      width: 34px;
       padding: 0;
       border-left: 1px solid rgba(255,255,255,0.5);
-      flex-shrink: 0; /* 防止寬度被壓縮 */
+      flex-shrink: 0;
+      text-align: center;
     }
 
-    /* 收束後的 >_ */
+    /* 收束符號 */
     #collapsed-trigger {
       position: absolute;
       left: 0;
       color: #ffffff;
       font-size: 24px;
       cursor: pointer;
-      user-select: none;
-      background: transparent;
       opacity: 0;
       transition: opacity 0.4s ease, transform 0.3s ease;
       pointer-events: none;
       transform: translateX(-10px);
     }
-
-    #collapsed-trigger.active {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateX(0);
-    }
+    #collapsed-trigger.active { opacity: 1; pointer-events: auto; transform: translateX(0); }
 
     .blink { animation: blink-animation 1s steps(2, start) infinite; }
     @keyframes blink-animation { to { visibility: hidden; } }
 
-    .pixel-icon { width: 16px; height: 16px; }
+    .pixel-icon { width: 18px; height: 18px; fill: white; }
   </style>
 </head>
 <body>
 
-<div id="ui-wrapper">
+<div id="ui-wrapper-left">
   <div id="control-panel">
     <input type="text" id="coord-input" spellcheck="false" autocomplete="off">
-    
     <button id="copy-btn" class="ui-btn" title="COPY" style="width: 40px; border-left: 1px solid rgba(255,255,255,0.3);">
-      <svg class="pixel-icon" viewBox="0 0 10 10" fill="white">
-        <rect x="0" y="2" width="6" height="6" />
-        <rect x="1" y="3" width="4" height="4" fill="black" />
-        <rect x="3" y="0" width="6" height="6" />
-        <rect x="4" y="1" width="4" height="4" fill="black" />
+      <svg class="pixel-icon" viewBox="0 0 10 10">
+        <rect x="0" y="2" width="6" height="6" /><rect x="1" y="3" width="4" height="4" fill="black" />
+        <rect x="3" y="0" width="6" height="6" /><rect x="4" y="1" width="4" height="4" fill="black" />
         <rect x="5" y="2" width="2" height="2" fill="white" />
       </svg>
     </button>
-
-    <button id="collapse-btn" class="ui-btn" title="COLLAPSE">
-      &lt;
-    </button>
+    <button id="collapse-btn" class="ui-btn" title="COLLAPSE">&lt;</button>
   </div>
-
-  <div id="collapsed-trigger">
-    &gt;<span class="blink">_</span>
-  </div>
+  <div id="collapsed-trigger">&gt;<span class="blink">_</span></div>
 </div>
+
+<button id="fullscreen-btn" title="TOGGLE FULLSCREEN">
+  <svg id="fs-icon" class="pixel-icon" viewBox="0 0 16 16">
+    <path id="fs-path" d="M1 1h5v1H2v4h-1V1zm9 0h5v5h-1V2h-4V1zM1 10h1v4h4v1H1v-5zm14 0v5h-5v-1h4v-4h1z" />
+  </svg>
+</button>
 
 <script>
 let myShader, time = 0, colorTime = 0, forcePoints = [], clickCount = 0;
 let isUiFocused = false;
 let currentStatus = "expanded";
 
-// 初始參數 (ringCount 已限制為 6)
 let params = { ringCount: 6, cameraZ: 8.5, speed: 0.04, baseBright: 0.35, glowBoost: 40, sat: 1.2, distort: 0.5 };
 
 const vert = `#version 300 es
@@ -188,7 +183,7 @@ void main() {
         float mD = 1e5;
         for(int j = 1; j <= 12; j++) {
             float fj = float(j);
-            if(fj > uRingCount) break; // 🌟 Shader 層級也會尊重數量限制
+            if(fj > uRingCount) break; 
             vec3 p = p_orig;
             p = rotate3D(p, uRot * (0.3 + fj * 0.1) + fj * 2.5);
             float theta = atan(p.y, p.x);
@@ -222,16 +217,17 @@ function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   pixelDensity(min(window.devicePixelRatio, 1.5));
   myShader = createShader(vert, frag);
-  
   for (let i = 0; i < 7; i++) {
     forcePoints.push({ pos: createVector(0,0,0), angle: random(TAU), isPermanent: i < 3, strength: 0, radius: random(200, 350), angleVel: random(0.01, 0.04) });
   }
 
+  // --- UI 事件 ---
   const panel = document.getElementById('control-panel');
   const trigger = document.getElementById('collapsed-trigger');
   const collapseBtn = document.getElementById('collapse-btn');
   const inputEl = document.getElementById('coord-input');
-  const copyBtn = document.getElementById('copy-btn');
+  const fsBtn = document.getElementById('fullscreen-btn');
+  const fsPath = document.getElementById('fs-path');
 
   collapseBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -247,11 +243,32 @@ function setup() {
     panel.classList.remove('is-collapsed');
   });
 
+  // 🌟 全螢幕切換與圖標反轉
+  fsBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        alert(`無法進入全螢幕: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+      // 🌟 切換為「向內」箭頭 (退出)
+      fsPath.setAttribute('d', 'M5 5h-4v1h3v3h1V5zm6 0v4h1v-3h3v-1h-4zM5 11v-4h-1v3h-3v1h4zm6 0h4v-1h-3v-3h-1v4z');
+    } else {
+      // 🌟 切換為「向外」箭頭 (進入)
+      fsPath.setAttribute('d', 'M1 1h5v1H2v4h-1V1zm9 0h5v5h-1V2h-4V1zM1 10h1v4h4v1H1v-5zm14 0v5h-5v-1h4v-4h1z');
+    }
+  });
+
   inputEl.addEventListener('focus', () => isUiFocused = true);
   inputEl.addEventListener('blur', () => isUiFocused = false);
   inputEl.addEventListener('input', (e) => loadFromID(e.target.value));
 
-  copyBtn.addEventListener('click', (e) => {
+  document.getElementById('copy-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     inputEl.select();
     navigator.clipboard.writeText(inputEl.value);
@@ -269,7 +286,6 @@ function getCoordinateID() {
 function loadFromID(id) {
   let parts = id.split('_');
   if (parts.length === 7) {
-    // 🌟 核心修改：輸入時也會限制數量不大於 7
     params.ringCount = min(max(parseFloat(parts[0]) || 1, 1), 7);
     params.cameraZ = parseFloat(parts[1]) || 5;
     params.speed = parseFloat(parts[2]) || 0.01;
@@ -286,13 +302,14 @@ function syncUi() {
 
 function mousePressed() {
   if (isUiFocused) return;
+  // 屏蔽 UI 點擊區域 (左側與右側)
   if (currentStatus === "expanded" && (mouseY > height - 80 && mouseX < 380)) return;
   if (currentStatus === "collapsed" && (mouseY > height - 80 && mouseX < 100)) return;
+  if (mouseY > height - 80 && mouseX > width - 100) return; 
 
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
     clickCount++;
     if (clickCount % 5 === 0) {
-      // 🌟 核心修改：隨機生成時限制數量不大於 7 (4-7) 或 (1-3)
       params.ringCount = params.ringCount < 4 ? floor(random(5, 8)) : floor(random(1, 4)); 
       params.cameraZ = params.cameraZ < 10.0 ? random(20.0, 30.0) : random(3.0, 5.0); 
       params.speed = params.speed < 0.05 ? random(0.12, 0.2) : random(0.002, 0.008); 
@@ -301,7 +318,6 @@ function mousePressed() {
       params.sat = params.sat > 1.2 ? random(0.2, 0.6) : random(2.0, 3.0); 
       params.distort = params.distort > 0.8 ? 0.0 : random(1.5, 2.5); 
     } else {
-      // 🌟 核心修改：隨機生成時限制數量不大於 7 (1-7)
       params.ringCount = floor(random(1, 8)); 
       params.cameraZ = random(4.5, 18.0);      
       params.speed = random(0.01, 0.1);      
