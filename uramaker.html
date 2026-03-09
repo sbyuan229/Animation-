@@ -3,83 +3,105 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>吳沅冠雕塑生成系統 | IBM VGA8 視覺版</title>
+  <title>吳沅冠雕塑生成系統 | 黃金比例定位版</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
     body { margin: 0; padding: 0; background-color: #000; overflow: hidden; }
     canvas { display: block; }
 
-    /* --- IBM VGA8 風格控制列 --- */
+    /* --- VGA 風格自適應控制列 --- */
     #control-panel {
       position: absolute;
       bottom: 30px;
       left: 30px;
       display: flex;
       align-items: center;
-      gap: 0px; /* 緊湊排版 */
+      gap: 0px; /* 緊湊無縫連接 */
       z-index: 100;
     }
 
     #coord-input {
       background: rgba(20, 20, 20, 0.8);
-      color: #00ffcc; /* 電子綠噴漆感 */
+      color: #ffffff; /* 🌟 換成純白色 */
       border: 1px solid #ffffff;
       padding: 10px 15px;
-      font-family: 'VT323', monospace; /* 🌟 應用 VGA 字體 */
-      font-size: 20px; /* 像素字體建議放大一點較清晰 */
-      width: 350px;
+      font-family: 'VT323', monospace; /* VGA 字體保留 */
+      font-size: 18px; /* 稍微縮小字號，使其外觀更細緻 */
+      /* 🌟 移除固定寬度，改為自適應 */
+      width: auto;
+      min-width: 150px; /* 保證最小寬度 */
       outline: none;
+      letter-spacing: 1px;
+      text-align: center; /* 文字居中 */
+    }
+
+    /* 用作測量文字寬度的隱藏元素 */
+    #text-measure {
+      visibility: hidden;
+      position: absolute;
+      height: 0;
+      overflow: hidden;
+      font-family: 'VT323', monospace;
+      font-size: 18px;
       letter-spacing: 1px;
     }
 
+    /* 🌟 圖標複製按鈕，樣式模仿提供的圖片 */
     #copy-btn {
-      background: #ffffff;
-      color: #000000;
+      background: rgba(20, 20, 20, 0.8);
+      color: #ffffff;
       border: 1px solid #ffffff;
-      padding: 10px 20px;
-      font-family: 'VT323', monospace; /* 🌟 應用 VGA 字體 */
-      font-size: 18px;
+      border-left: none; /* 與輸入框無縫相連 */
+      padding: 10px 15px;
       cursor: pointer;
-      transition: all 0.1s ease;
-      font-weight: bold;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     #copy-btn:hover {
-      background: #00ffcc;
+      background: #00ffcc; /* 滑過時顯示電子綠回饋 */
+      color: #000000;
       border-color: #00ffcc;
     }
 
     #copy-btn:active {
-      transform: translateY(2px);
+      transform: scale(0.95);
     }
 
-    /* 左下角提示標籤 */
-    #hint {
-      position: absolute;
-      bottom: 80px;
-      left: 30px;
-      color: #ffffff;
-      font-family: 'VT323', monospace; /* 🌟 應用 VGA 字體 */
-      font-size: 16px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      opacity: 0.8;
+    /* SVG 圖標：兩張紙疊放 */
+    #copy-icon {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
   </style>
 </head>
 <body>
 
-<div id="hint">SYSTEM_CORE_COORDINATES // VGA_MODE</div>
+<span id="text-measure"></span>
+
 <div id="control-panel">
-  <input type="text" id="coord-input" spellcheck="false" autocomplete="off">
-  <button id="copy-btn">COPY</button>
+  <input type="text" id="coord-input" spellcheck="false" autocomplete="off" placeholder="Load sequence...">
+  <button id="copy-btn">
+    <svg id="copy-icon" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+  </button>
 </div>
 
 <script>
 let myShader, time = 0, colorTime = 0, forcePoints = [], clickCount = 0;
 let isUiFocused = false;
 
+// 初始參數
 let params = {
   ringCount: 6,
   cameraZ: 8.5,
@@ -171,23 +193,40 @@ function setup() {
     forcePoints.push({ pos: createVector(0,0,0), angle: random(TAU), isPermanent: i < 3, strength: 0, radius: random(200, 350), angleVel: random(0.01, 0.04) });
   }
 
+  // --- UI 事件綁定 ---
   const inputEl = document.getElementById('coord-input');
   const copyBtn = document.getElementById('copy-btn');
+  const measureEl = document.getElementById('text-measure');
+
+  // 🌟 核心功能：動態調整輸入框寬度
+  function adjustInputWidth(text) {
+    measureEl.innerText = text;
+    // 測量寬度 + 一定內邊距（確保文字不擁擠）
+    const measuredWidth = measureEl.offsetWidth;
+    const padding = 30; // 內邊距，左右各15
+    inputEl.style.width = (measuredWidth + padding) + 'px';
+  }
 
   inputEl.addEventListener('focus', () => isUiFocused = true);
   inputEl.addEventListener('blur', () => isUiFocused = false);
   
+  // 輸入時即時更新畫面與寬度
   inputEl.addEventListener('input', (e) => {
     loadFromID(e.target.value);
+    adjustInputWidth(e.target.value);
   });
 
+  // 複製按鈕功能
   copyBtn.addEventListener('click', () => {
     inputEl.select();
     navigator.clipboard.writeText(inputEl.value);
-    const originalText = copyBtn.innerText;
-    copyBtn.innerText = "DONE!";
-    setTimeout(() => copyBtn.innerText = originalText, 1000);
+    const originalBorder = copyBtn.style.borderColor;
+    copyBtn.style.borderColor = "#00ffcc"; // 複製成功時短暫閃爍電子綠
+    setTimeout(() => copyBtn.style.borderColor = originalBorder, 500);
   });
+
+  // 在 p5.js 代碼中暴露此函數以便同步
+  window.adjustInputWidth = adjustInputWidth;
 
   syncUi();
 }
@@ -210,11 +249,19 @@ function loadFromID(id) {
 }
 
 function syncUi() {
-  document.getElementById('coord-input').value = getCoordinateID();
+  const coordId = getCoordinateID();
+  document.getElementById('coord-input').value = coordId;
+  // 同步時動態更新寬度
+  if (window.adjustInputWidth) {
+    window.adjustInputWidth(coordId);
+  }
 }
 
 function mousePressed() {
-  if (isUiFocused || (mouseY > height - 100 && mouseX < 500)) return;
+  // 動態忽略 UI 區域的點擊，不硬編碼寬度，根據 UI 的真實大小判斷
+  const uiEl = document.getElementById('control-panel');
+  const inputEl = document.getElementById('coord-input');
+  if (isUiFocused || (mouseY > height - 100 && mouseX < (uiEl.offsetLeft + uiEl.offsetWidth + 20))) return;
 
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
     clickCount++;
