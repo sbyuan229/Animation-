@@ -3,121 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>吳沅冠雕塑生成系統 | HDR 專業儀表版</title>
+  <title>吳沅冠靈光雕塑系統</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
     body { margin: 0; padding: 0; background-color: #000; overflow: hidden; }
     canvas { display: block; }
 
-    /* --- 左側控制列容器 --- */
+    /* --- 左側控制列 --- */
     #ui-wrapper-left {
-      position: absolute;
-      bottom: 30px;
-      left: 30px;
-      z-index: 100;
-      font-family: 'VT323', monospace;
+      position: absolute; bottom: 30px; left: 30px; z-index: 100; font-family: 'VT323', monospace;
     }
 
-    /* 🌟 HDR 燈號：位於輸入框左上角 */
     #hdr-tag {
-      position: absolute;
-      top: -20px;
-      left: 0;
-      color: #ffffff;
-      font-size: 14px;
-      letter-spacing: 1px;
-      opacity: 0; /* 預設不顯示 */
-      transition: opacity 0.3s ease;
-      pointer-events: none;
-      display: none; /* 只有偵測到 HDR 且展開時才顯示 */
+      position: absolute; top: -22px; left: 0; color: #ffffff; font-size: 14px;
+      letter-spacing: 1px; opacity: 0; transition: opacity 0.3s ease;
+      pointer-events: none; display: none;
     }
+    #hdr-tag.visible { display: block; opacity: 0.9; }
 
-    #hdr-tag.visible { display: block; opacity: 0.8; }
-
-    /* 控制面板 */
     #control-panel {
-      display: flex;
-      align-items: center;
-      background: rgba(0, 0, 0, 0); /* 🌟 全透明背景 */
-      border: 1px solid #ffffff;
-      width: 320px;
-      height: 34px;
-      overflow: hidden; 
+      display: flex; align-items: center; background: rgba(0, 0, 0, 0); 
+      border: 1px solid #ffffff; width: 320px; height: 34px; overflow: hidden; 
       transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
       transform-origin: left center;
     }
-
     #control-panel.is-collapsed { width: 0; opacity: 0; transform: scaleX(0); border-color: transparent; pointer-events: none; }
 
     #coord-input {
-      background: transparent;
-      color: #ffffff;
-      border: none;
-      padding: 0 10px 4px 10px; /* 文字位置提升修正 */
-      font-family: 'VT323', monospace;
-      font-size: 18px;
-      width: 220px; 
-      height: 100%;
-      outline: none;
-      letter-spacing: 1px;
+      background: transparent; color: #ffffff; border: none;
+      padding: 0 10px 4px 10px; font-family: 'VT323', monospace;
+      font-size: 18px; width: 220px; height: 100%; outline: none; letter-spacing: 1px;
     }
 
-    /* 右側全螢幕按鈕 */
+    /* --- 右側全螢幕按鈕 --- */
     #fullscreen-btn {
-      position: absolute;
-      bottom: 30px;
-      right: 30px;
-      z-index: 100;
-      width: 34px;
-      height: 34px;
-      background: rgba(0, 0, 0, 0);
-      border: 1px solid #ffffff;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute; bottom: 30px; right: 30px; z-index: 100;
+      width: 34px; height: 34px; background: rgba(0, 0, 0, 0); border: 1px solid #ffffff;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: all 0.3s ease;
     }
 
     .ui-btn {
-      background: transparent;
-      border: none;
-      height: 100%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
+      background: transparent; border: none; height: 100%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; color: white;
       transition: all 0.2s ease;
     }
+    .ui-btn:hover { background: rgba(255, 255, 255, 0.1); }
 
+    /* < 符號完全置中與字體統一 */
     #collapse-btn {
-      font-family: 'VT323', monospace;
-      font-size: 20px;
-      width: 34px;
-      padding: 0;
-      border-left: 1px solid rgba(255,255,255,0.5);
-      flex-shrink: 0;
-      text-align: center; /* 符號置中修正 */
+      font-family: 'VT323', monospace; font-size: 20px; width: 36px; padding: 0;
+      border-left: 1px solid rgba(255,255,255,0.5); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
     }
 
     #collapsed-trigger {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      color: #ffffff;
-      font-size: 24px;
-      cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.4s ease, transform 0.3s ease;
+      position: absolute; bottom: 0; left: 0; color: #ffffff; font-size: 24px;
+      cursor: pointer; opacity: 0; transition: opacity 0.4s ease, transform 0.3s ease;
       pointer-events: none;
     }
     #collapsed-trigger.active { opacity: 1; pointer-events: auto; }
 
     .blink { animation: blink-animation 1s steps(2, start) infinite; }
     @keyframes blink-animation { to { visibility: hidden; } }
-
     .pixel-icon { width: 18px; height: 18px; fill: white; }
   </style>
 </head>
@@ -125,22 +74,21 @@
 
 <div id="ui-wrapper-left">
   <div id="hdr-tag">[HDR]</div>
-
   <div id="control-panel">
     <input type="text" id="coord-input" spellcheck="false" autocomplete="off">
-    <button id="copy-btn" class="ui-btn" title="COPY" style="width: 40px; border-left: 1px solid rgba(255,255,255,0.3);">
+    <button id="copy-btn" class="ui-btn" title="COPY" style="width: 42px; border-left: 1px solid rgba(255,255,255,0.3);">
       <svg class="pixel-icon" viewBox="0 0 10 10">
         <rect x="0" y="2" width="6" height="6" /><rect x="1" y="3" width="4" height="4" fill="black" />
         <rect x="3" y="0" width="6" height="6" /><rect x="4" y="1" width="4" height="4" fill="black" />
         <rect x="5" y="2" width="2" height="2" fill="white" />
       </svg>
     </button>
-    <button id="collapse-btn" class="ui-btn" title="COLLAPSE">&lt;</button>
+    <button id="collapse-btn" class="ui-btn">&lt;</button>
   </div>
   <div id="collapsed-trigger">&gt;<span class="blink">_</span></div>
 </div>
 
-<button id="fullscreen-btn" title="TOGGLE FULLSCREEN">
+<button id="fullscreen-btn">
   <svg id="fs-icon" class="pixel-icon" viewBox="0 0 16 16">
     <path id="fs-path" d="M1 1h5v1H2v4h-1V1zm9 0h5v5h-1V2h-4V1zM1 10h1v4h4v1H1v-5zm14 0v5h-5v-1h4v-4h1z" />
   </svg>
@@ -148,10 +96,7 @@
 
 <script>
 let myShader, time = 0, colorTime = 0, forcePoints = [], clickCount = 0;
-let isUiFocused = false;
-let currentStatus = "expanded";
-let isHDRSupported = false;
-
+let isUiFocused = false, currentStatus = "expanded", isHDRSupported = false;
 let params = { ringCount: 6, cameraZ: 8.5, speed: 0.04, baseBright: 0.35, glowBoost: 40, sat: 1.2, distort: 0.5 };
 
 const vert = `#version 300 es
@@ -165,7 +110,7 @@ uniform vec2 r;
 uniform float t, ct;
 uniform vec3 uRot;
 uniform float uBaseBright, uGlowBoost, uCameraZ, uSat, uDistort, uRingCount;
-uniform bool uIsHDR; // 🌟 接收 HDR 狀態
+uniform bool uIsHDR; 
 uniform vec3 uForcePos[7];
 uniform float uForceStrength[7];
 uniform float uForceRadius[7];
@@ -224,28 +169,21 @@ void main() {
         o += vec4(AccColor, 1.0); 
     }
 
-    // 🌟 HDR 色彩映射邏輯
     if (uIsHDR) {
-        o.rgb = o.rgb / 1.6e4; // 減少壓縮力道，讓高亮度處超過 1.0 以顯示真 HDR 效果
+        // 🌟 HDR 模式優化：降低分母從 1.6e4 到 8.0e3，強迫輸出更高能量
+        o.rgb = o.rgb / 8000.0; 
     } else {
-        o.rgb = ACESFilm(o.rgb / 2.8e4); // SDR 下原本的標準壓縮
+        o.rgb = ACESFilm(o.rgb / 2.8e4); 
     }
     o.a = 1.0;
 }`;
 
 function setup() {
-  // 🌟 HDR 硬體偵測
   isHDRSupported = window.matchMedia('(dynamic-range: high)').matches;
-  
   const canvas = createCanvas(windowWidth, windowHeight, WEBGL);
   
-  // 🌟 如果支援 HDR，配置 Canvas 內容
   if (isHDRSupported) {
-    const gl = canvas.elt.getContext('webgl2', {
-      colorSpace: 'display-p3',
-      pixelFormat: 'float16'
-    });
-    console.log("HDR 啟動：使用廣色域渲染");
+    canvas.elt.getContext('webgl2', { colorSpace: 'display-p3', pixelFormat: 'float16' });
   }
 
   pixelDensity(min(window.devicePixelRatio, 1.5));
@@ -254,52 +192,41 @@ function setup() {
     forcePoints.push({ pos: createVector(0,0,0), angle: random(TAU), isPermanent: i < 3, strength: 0, radius: random(200, 350), angleVel: random(0.01, 0.04) });
   }
 
-  // --- UI 事件 ---
-  const panel = document.getElementById('control-panel');
-  const trigger = document.getElementById('collapsed-trigger');
-  const collapseBtn = document.getElementById('collapse-btn');
-  const hdrTag = document.getElementById('hdr-tag');
-  const inputEl = document.getElementById('coord-input');
+  const panel = document.getElementById('control-panel'), trigger = document.getElementById('collapsed-trigger');
+  const collapseBtn = document.getElementById('collapse-btn'), hdrTag = document.getElementById('hdr-tag');
+  const inputEl = document.getElementById('coord-input'), fsBtn = document.getElementById('fullscreen-btn');
+
+  // 🌟 自動隱藏不支援全螢幕的按鈕
+  if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) {
+    fsBtn.style.display = 'none';
+  }
 
   function updateHdrTag() {
-    if (isHDRSupported && currentStatus === "expanded") {
-      hdrTag.classList.add('visible');
-    } else {
-      hdrTag.classList.remove('visible');
-    }
+    if (isHDRSupported && currentStatus === "expanded") { hdrTag.classList.add('visible'); } 
+    else { hdrTag.classList.remove('visible'); }
   }
 
   collapseBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    currentStatus = "collapsed";
-    panel.classList.add('is-collapsed');
-    updateHdrTag();
+    e.stopPropagation(); currentStatus = "collapsed";
+    panel.classList.add('is-collapsed'); updateHdrTag();
     setTimeout(() => { trigger.classList.add('active'); }, 200);
   });
 
   trigger.addEventListener('click', (e) => {
-    e.stopPropagation();
-    currentStatus = "expanded";
-    trigger.classList.remove('active');
-    panel.classList.remove('is-collapsed');
+    e.stopPropagation(); currentStatus = "expanded";
+    trigger.classList.remove('active'); panel.classList.remove('is-collapsed');
     setTimeout(updateHdrTag, 100);
   });
 
-  document.getElementById('fullscreen-btn').addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
+  fsBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
   });
 
   document.addEventListener('fullscreenchange', () => {
     const fsPath = document.getElementById('fs-path');
-    if (document.fullscreenElement) {
-      fsPath.setAttribute('d', 'M5 5h-4v1h3v3h1V5zm6 0v4h1v-3h3v-1h-4zM5 11v-4h-1v3h-3v1h4zm6 0h4v-1h-3v-3h-1v4z');
-    } else {
-      fsPath.setAttribute('d', 'M1 1h5v1H2v4h-1V1zm9 0h5v5h-1V2h-4V1zM1 10h1v4h4v1H1v-5zm14 0v5h-5v-1h4v-4h1z');
-    }
+    if (document.fullscreenElement) fsPath.setAttribute('d', 'M5 5h-4v1h3v3h1V5zm6 0v4h1v-3h3v-1h-4zM5 11v-4h-1v3h-3v1h4zm6 0h4v-1h-3v-3h-1v4z');
+    else fsPath.setAttribute('d', 'M1 1h5v1H2v4h-1V1zm9 0h5v5h-1V2h-4V1zM1 10h1v4h4v1H1v-5zm14 0v5h-5v-1h4v-4h1z');
   });
 
   inputEl.addEventListener('focus', () => isUiFocused = true);
@@ -307,15 +234,12 @@ function setup() {
   inputEl.addEventListener('input', (e) => loadFromID(e.target.value));
 
   document.getElementById('copy-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    inputEl.select();
+    e.stopPropagation(); inputEl.select();
     navigator.clipboard.writeText(inputEl.value);
-    panel.style.borderColor = "#00ffcc";
-    setTimeout(() => panel.style.borderColor = "#ffffff", 200);
+    panel.style.borderColor = "#00ffcc"; setTimeout(() => panel.style.borderColor = "#ffffff", 200);
   });
 
-  updateHdrTag();
-  syncUi();
+  updateHdrTag(); syncUi();
 }
 
 function getCoordinateID() {
@@ -325,7 +249,7 @@ function getCoordinateID() {
 function loadFromID(id) {
   let parts = id.split('_');
   if (parts.length === 7) {
-    params.ringCount = min(max(parseFloat(parts[0]) || 1, 1), 7); // 數量限制 7
+    params.ringCount = min(max(parseFloat(parts[0]) || 1, 1), 7);
     params.cameraZ = parseFloat(parts[1]) || 5;
     params.speed = parseFloat(parts[2]) || 0.01;
     params.baseBright = parseFloat(parts[3]) || 0.1;
@@ -335,9 +259,7 @@ function loadFromID(id) {
   }
 }
 
-function syncUi() {
-  document.getElementById('coord-input').value = getCoordinateID();
-}
+function syncUi() { document.getElementById('coord-input').value = getCoordinateID(); }
 
 function mousePressed() {
   if (isUiFocused) return;
@@ -356,12 +278,9 @@ function mousePressed() {
       params.sat = params.sat > 1.2 ? random(0.2, 0.6) : random(2.0, 3.0); 
       params.distort = params.distort > 0.8 ? 0.0 : random(1.5, 2.5); 
     } else {
-      params.ringCount = floor(random(1, 8)); // 數量限制 7
-      params.cameraZ = random(4.5, 18.0);      
-      params.speed = random(0.01, 0.1);      
-      params.baseBright = random(0.1, 0.7);   
-      params.glowBoost = random(10, 80);      
-      params.sat = random(0.6, 2.0);           
+      params.ringCount = floor(random(1, 8)); params.cameraZ = random(4.5, 18.0);      
+      params.speed = random(0.01, 0.1); params.baseBright = random(0.1, 0.7);   
+      params.glowBoost = random(10, 80); params.sat = random(0.6, 2.0);           
       params.distort = random(0.1, 1.5);       
     }
     syncUi();
@@ -370,37 +289,29 @@ function mousePressed() {
 
 function draw() {
   background(0);
-  time += params.speed; 
-  colorTime += params.speed * 1.5;
+  time += params.speed; colorTime += params.speed * 1.5;
   forcePoints.forEach(fp => {
     fp.angle += fp.angleVel;
-    fp.pos.x = 220 * cos(fp.angle); 
-    fp.pos.y = 220 * sin(fp.angle);
+    fp.pos.x = 220 * cos(fp.angle); fp.pos.y = 220 * sin(fp.angle);
     fp.strength = fp.isPermanent ? 140 : 80;
   });
   shader(myShader);
-  myShader.setUniform('uIsHDR', isHDRSupported); // 🌟 傳入 HDR 指令
+  myShader.setUniform('uIsHDR', isHDRSupported); 
   myShader.setUniform('r', [width * pixelDensity(), height * pixelDensity()]);
-  myShader.setUniform('t', time);
-  myShader.setUniform('ct', colorTime);
+  myShader.setUniform('t', time); myShader.setUniform('ct', colorTime);
   myShader.setUniform('uRot', [frameCount * 0.005, frameCount * 0.003, frameCount * 0.002]);
-  myShader.setUniform('uBaseBright', params.baseBright);
-  myShader.setUniform('uGlowBoost', params.glowBoost);
-  myShader.setUniform('uCameraZ', params.cameraZ);
-  myShader.setUniform('uSat', params.sat);
-  myShader.setUniform('uDistort', params.distort);
-  myShader.setUniform('uRingCount', params.ringCount);
+  myShader.setUniform('uBaseBright', params.baseBright); myShader.setUniform('uGlowBoost', params.glowBoost);
+  myShader.setUniform('uCameraZ', params.cameraZ); myShader.setUniform('uSat', params.sat);
+  myShader.setUniform('uDistort', params.distort); myShader.setUniform('uRingCount', params.ringCount);
   let fPos = [], fStr = [], fRad = [];
   forcePoints.forEach(fp => {
     fPos.push(fp.pos.x * 0.02, fp.pos.y * 0.02, fp.pos.z * 0.02);
     fStr.push(fp.strength * 0.0016); fRad.push(fp.radius * 0.012);
   });
-  myShader.setUniform('uForcePos', fPos);
-  myShader.setUniform('uForceStrength', fStr);
+  myShader.setUniform('uForcePos', fPos); myShader.setUniform('uForceStrength', fStr);
   myShader.setUniform('uForceRadius', fRad);
   rect(-width / 2, -height / 2, width, height);
 }
-
 function windowResized() { resizeCanvas(windowWidth, windowHeight); }
 </script>
 </body>
