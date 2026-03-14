@@ -12,8 +12,7 @@
         body {
             margin: 0;
             padding: 0;
-            /* 關鍵修改：網頁其餘背景變為黑色 */
-            background-color: #000; 
+            background-color: #000; /* 網頁背景黑色 */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -22,8 +21,7 @@
             font-family: 'Klee One', serif;
         }
         canvas {
-            /* 畫布本身維持白色，並加上細微的發光感使其在黑背景中更突出 */
-            box-shadow: 0 0 50px rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 60px rgba(255, 255, 255, 0.1);
             background-color: #fff;
         }
     </style>
@@ -60,7 +58,6 @@
             speedTimer = random(50, 400); emotionTimer = random(100, 800); 
             wobbleAmpTimer = random(50, 400); wobbleFreqTimer = random(50, 400);
             
-            // 左側繪圖區邊框
             push(); stroke(240); noFill(); rect(0, 0, MAX_WIDTH_MM * MM_TO_PX, height); pop();
             startNewStroke();
         }
@@ -154,13 +151,15 @@
             let pX = MAX_WIDTH_MM * MM_TO_PX;
             fill(255); noStroke(); rect(pX, 0, UI_PANEL_WIDTH_PX, height); 
             fill(0); textFont('Klee One'); 
-            let lX = pX + 35, vX = pX + 180, uX = pX + 195, tY = 45, sp = 24;
+            
+            // 【排版優化】向右移動數值座標 (vX) 以防止長單詞重疊
+            let lX = pX + 35, vX = pX + 220, uX = pX + 235, tY = 45, sp = 24;
             
             textSize(26); textAlign(LEFT); text("Reflectere", lX, tY); tY += sp * 1.5;
-            
             textSize(14); 
+
             let row = (act, lab, val, uni, y) => { 
-                fill(act ? 0 : 180); text(act ? "[>]" : "[ ]", lX, y); 
+                fill(act ? 0 : 190); text(act ? "[>]" : "[ ]", lX, y); 
                 text(lab, lX + 28, y); textAlign(RIGHT); text(val, vX, y); 
                 textAlign(LEFT); text(uni, uX, y); fill(0);
             };
@@ -187,19 +186,18 @@
             d("Wob_Amp :", currentWobbleAmp.toFixed(2), "mm", tY); tY += sp;
             d("Wob_Frq :", currentWobbleFreq.toFixed(3), "Hz", tY); tY += sp * 1.5;
 
-            textSize(12); fill(isP || isSpasming ? 100 : 150);
+            fill(120); textSize(12);
             text(isP ? "> Warning: Magnetic repulsion active" : "> System safe: Maintaining trajectory", lX, tY); tY += sp;
             text(isSpasming ? "> Exception: Nervous twitch triggered!" : "> No spasm detected.", lX, tY); tY += sp * 1.5;
 
-            // 實時代碼顯示
-            fill(120);
+            // 代碼顯示
             text("let steer = p5.Vector.sub(desiredVel, vel);", lX, tY); tY += 18;
             let iLimit = (currentMode === 0) ? 0.03 : 0.2; 
             let curI = isP ? "1.500" : map(currentEmotion, 0, 1, 0.005, iLimit).toFixed(3);
             text(`steer.limit(${currentSpeedMM.toFixed(1)} * ${curI});`, lX, tY); tY += 18;
             text("vel.add(steer); pos.add(p5.Vector.div(vel, 60));", lX, tY);
 
-            // 統一簽名字體
+            // 【統一簽名字體】
             textAlign(RIGHT, BOTTOM); textSize(26); fill(0);
             textFont('Klee One');
             text("Yuan.", width - 30, height - 25);
