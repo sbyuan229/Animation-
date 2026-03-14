@@ -5,23 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reflectere - Yuan.</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.js"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            background-color: #000; /* 網頁背景黑色 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            font-family: 'Klee One', serif;
+            margin: 0; padding: 0; background-color: #000;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
+            font-family: 'Noto Serif TC', serif;
         }
         canvas {
-            box-shadow: 0 0 60px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 80px rgba(255, 255, 255, 0.08);
             background-color: #fff;
         }
     </style>
@@ -31,8 +25,9 @@
     <script>
         const MAX_WIDTH_MM = 310, MAX_HEIGHT_MM = 256;
         const PEN_WIDTH_MM = 0.5, MM_TO_PX = 3.78;
-        const SAFE_MARGIN_MM = 15, AVOID_DIST_MM = 55, UI_PANEL_WIDTH_PX = 350; 
+        const SAFE_MARGIN_MM = 15, AVOID_DIST_MM = 55, UI_PANEL_WIDTH_PX = 420;
 
+        let cycleCount = 0; 
         let macroState = 0, macroTimer = 0; 
         let segmentStartPosMM, segmentStartVel, segmentFirstDrawnPosMM; 
         let returnLerp = 0, returnMode = 0;    
@@ -45,6 +40,8 @@
         let currentWobbleFreq = 0.01, targetWobbleFreq = 0.01, wobbleFreqTimer = 0;     
 
         let pos, vel, tAngle = 0, tWobble = 0, prevDrawnPosMM; 
+
+        const CREATION_TEXT_RAW = "對我來說，工業代表一切都能數據化並複製，但我相信一定有什麼微小到不行的細節是沒辦法被複製、卻足以影響一切的，而那個細節就是藝術性所在。在這件作品中，我放入了多種代碼片段，讓它們隨機排列組合，讓純粹基於邏輯計算的機器模擬出了一種好像有靈魂、有意志而在思考、創作的狀態。當這些隨機生成的行為跟模式切換堆疊到一個程度，就可以模擬出精神的表相、很有趣的生命感。我就是想透過這種方式，在絕對理性的邊界上，去抓到那一點點應該專屬於人的、不可捉摸的意識流光。";
 
         function setup() {
             let totalW = (MAX_WIDTH_MM * MM_TO_PX) + UI_PANEL_WIDTH_PX;
@@ -94,9 +91,9 @@
 
             modeTimer--; if (modeTimer <= 0) { switchMode(); modeTimer = random(800, 2500); }
 
-            let isSpasming = false;
+            let isSpasm = false;
             if (random(1) < spasmProbability) {
-                isSpasming = true; targetSpeedMM = random(currentMaxSpeed, currentMaxSpeed * 1.5);        
+                isSpasm = true; targetSpeedMM = random(currentMaxSpeed, currentMaxSpeed * 1.5);        
                 currentSpeedMM = targetSpeedMM; currentWobbleAmp = random(1.5, 4.0); tAngle += random(20, 60); emotionTimer = random(5, 20);          
             }
 
@@ -141,66 +138,109 @@
                 push(); stroke(0); strokeWeight(PEN_WIDTH_MM * MM_TO_PX);
                 line(curD.x * MM_TO_PX, curD.y * MM_TO_PX, segmentFirstDrawnPosMM.x * MM_TO_PX, segmentFirstDrawnPosMM.y * MM_TO_PX);
                 pop();
-                macroState = 2; macroTimer = random(5 * 60, 20 * 60); return;
+                cycleCount++; macroState = 2; macroTimer = random(5 * 60, 20 * 60); return;
             }
-            drawTelemetryPanel(curD, isP, isSpasming);
+            drawTelemetryPanel(curD, isP, isSpasm);
+        }
+
+        function formatOverview(str, limit) {
+            let result = "";
+            for (let i = 0; i < str.length; i++) {
+                result += str[i];
+                if ((i + 1) % limit === 0) result += "\n";
+            }
+            return result;
         }
 
         function drawTelemetryPanel(drawnPos, isP, isSpasming) {
             push();
             let pX = MAX_WIDTH_MM * MM_TO_PX;
+            
             fill(255); noStroke(); rect(pX, 0, UI_PANEL_WIDTH_PX, height); 
-            fill(0); textFont('Klee One'); 
             
-            // 【排版優化】向右移動數值座標 (vX) 以防止長單詞重疊
-            let lX = pX + 35, vX = pX + 220, uX = pX + 235, tY = 45, sp = 24;
+            fill(0); textFont('Noto Serif TC'); 
             
-            textSize(26); textAlign(LEFT); text("Reflectere", lX, tY); tY += sp * 1.5;
-            textSize(14); 
+            let lX = pX + 40;     
+            let vX = pX + 260;    
+            let uX = pX + 275;    
+            let tY = 50, sp = 26;
+            
+            // --- 【修正區域】標題與作者的準確排版 ---
+            let titleText = "《構思》";
+            textSize(28); textStyle(BOLD); textAlign(LEFT); 
+            
+            let bracketOffset = textWidth("《") * 0.35; 
+            text(titleText, lX - bracketOffset, tY); 
+            
+            // 先精準獲取 28px 狀態下的標題寬度
+            let titleWidth = textWidth(titleText); 
 
+            // 然後再切換成較小的字體畫後面的字
+            textSize(18); textStyle(NORMAL);
+            // 加上 20px 的間距，徹底解決重疊
+            text("2026 吳沅冠", lX - bracketOffset + titleWidth + 20, tY - 1);
+            tY += sp * 2;
+            
+            textSize(14); 
             let row = (act, lab, val, uni, y) => { 
-                fill(act ? 0 : 190); text(act ? "[>]" : "[ ]", lX, y); 
-                text(lab, lX + 28, y); textAlign(RIGHT); text(val, vX, y); 
-                textAlign(LEFT); text(uni, uX, y); fill(0);
+                textAlign(LEFT);
+                fill(act ? 0 : 190); 
+                text(act ? "[>]" : "[ ]", lX, y); 
+                text(lab, lX + 30, y); 
+                
+                textAlign(RIGHT); 
+                text(val, vX, y); 
+                
+                textAlign(LEFT); 
+                text(uni, uX, y); 
+                fill(0);
             };
 
-            text("- Macro Sequence -", lX, tY); tY += sp;
-            if (macroState === 0) { row(true, "Wandering", (macroTimer/60).toFixed(1), "sec", tY); tY += sp; row(false, "Returning", "Wait", "", tY); tY += sp; row(false, "Standby", "Wait", "", tY); }
-            else if (macroState === 1) { row(false, "Wandering", "Wait", "", tY); tY += sp; row(true, (returnMode===1?"Rear Hook":"Homing"), (returnLerp*100).toFixed(0), "%", tY); tY += sp; row(false, "Standby", "Wait", "", tY); }
-            else { row(false, "Wandering", "Wait", "", tY); tY += sp; row(false, "Returning", "Wait", "", tY); tY += sp; row(true, "Standby", (macroTimer/60).toFixed(1), "sec", tY); }
+            // 1. 狀態列
+            text("- 狀態列 -", lX, tY); tY += sp;
+            if (macroState === 0) { row(true, "繪製", (macroTimer/60).toFixed(1), "s", tY); tY += sp; row(false, "收筆", "等候", "", tY); tY += sp; row(false, "提筆等待", "等候", "", tY); }
+            else if (macroState === 1) { row(false, "繪製", "等候", "", tY); tY += sp; row(true, (returnMode===1?"順暢收筆":"收筆"), (returnLerp*100).toFixed(0), "%", tY); tY += sp; row(false, "提筆等待", "等候", "", tY); }
+            else { row(false, "繪製", "等候", "", tY); tY += sp; row(false, "收筆", "等候", "", tY); tY += sp; row(true, "提筆等待", (macroTimer/60).toFixed(1), "s", tY); }
             tY += sp * 1.5;
 
-            text("- Spatial Data -", lX, tY); tY += sp;
-            let d = (l,v,u,y) => { textAlign(LEFT); text(l,lX,y); textAlign(RIGHT); text(v,vX,y); textAlign(LEFT); text(u,uX,y); };
-            d("Pixel X :", (drawnPos.x*MM_TO_PX).toFixed(1), "px", tY); tY += sp;
-            d("Pixel Y :", (drawnPos.y*MM_TO_PX).toFixed(1), "px", tY); tY += sp;
-            d("Rate    :", currentSpeedMM.toFixed(2), "mm/s", tY); tY += sp;
-            d("Vector  :", ((degrees(vel.heading())+360)%360).toFixed(1), "°", tY); tY += sp * 1.5;
+            // 2. 當前數據
+            text("- 當前數據 -", lX, tY); tY += sp;
+            let d = (l,v,u,y) => { 
+                textAlign(LEFT); text(l, lX, y); 
+                textAlign(RIGHT); text(v, vX, y); 
+                textAlign(LEFT); text(u, uX, y); 
+            };
+            d("X / Y 軸 :", (drawnPos.x*MM_TO_PX).toFixed(1) + " / " + (drawnPos.y*MM_TO_PX).toFixed(1), "px", tY); tY += sp;
+            d("速率    :", currentSpeedMM.toFixed(2), "mm/s", tY); tY += sp;
+            d("向量角度  :", ((degrees(vel.heading())+360)%360).toFixed(1), "°", tY); tY += sp * 1.5;
 
-            text("- Emotion Engine -", lX, tY); tY += sp;
-            row(currentMode===0, "Deep Breath", currentMode===0?(modeTimer/60).toFixed(1):"Wait", "sec", tY); tY += sp;
-            row(currentMode===1, "Emotional", currentMode===1?(modeTimer/60).toFixed(1):"Wait", "sec", tY); tY += sp;
-            row(currentMode===2, "Nervous Spasm", currentMode===2?(modeTimer/60).toFixed(1):"Wait", "sec", tY); tY += sp * 1.5;
+            // 3. 情緒引擎
+            text("- 情緒引擎 -", lX, tY); tY += sp;
+            row(currentMode===0, "模式一", currentMode===0?(modeTimer/60).toFixed(1):"等候", "s", tY); tY += sp;
+            row(currentMode===1, "模式二", currentMode===1?(modeTimer/60).toFixed(1):"等候", "s", tY); tY += sp;
+            row(currentMode===2, "模式三", currentMode===2?(modeTimer/60).toFixed(1):"等候", "s", tY); tY += sp * 1.2;
             
-            d("Arousal :", (currentEmotion*100).toFixed(1), "%", tY); tY += sp;
-            d("Wob_Amp :", currentWobbleAmp.toFixed(2), "mm", tY); tY += sp;
-            d("Wob_Frq :", currentWobbleFreq.toFixed(3), "Hz", tY); tY += sp * 1.5;
+            d("不穩定值 :", (currentEmotion*100).toFixed(1), "%", tY); tY += sp;
+            d("累計循環 :", cycleCount, "次", tY); tY += sp * 1.5;
 
+            // 4. 實時邏輯串流
             fill(120); textSize(12);
-            text(isP ? "> Warning: Magnetic repulsion active" : "> System safe: Maintaining trajectory", lX, tY); tY += sp;
-            text(isSpasming ? "> Exception: Nervous twitch triggered!" : "> No spasm detected.", lX, tY); tY += sp * 1.5;
+            text("- 實時邏輯串流 -", lX, tY); tY += sp;
+            text(isP ? "> 磁力排斥作用中" : "> 維持預定軌跡", lX, tY); tY += sp;
+            text(isSpasming ? "> 異常" : "> 維持預定軌跡", lX, tY); tY += sp * 1.5;
 
-            // 代碼顯示
-            text("let steer = p5.Vector.sub(desiredVel, vel);", lX, tY); tY += 18;
-            let iLimit = (currentMode === 0) ? 0.03 : 0.2; 
-            let curI = isP ? "1.500" : map(currentEmotion, 0, 1, 0.005, iLimit).toFixed(3);
-            text(`steer.limit(${currentSpeedMM.toFixed(1)} * ${curI});`, lX, tY); tY += 18;
-            text("vel.add(steer); pos.add(p5.Vector.div(vel, 60));", lX, tY);
+            fill(140);
+            text("let steer = p5.Vector.sub(desiredVel, vel);", lX, tY); tY += 22;
+            let curI = isP ? "1.500" : map(currentEmotion, 0, 1, 0.005, (currentMode===0?0.03:0.2)).toFixed(3);
+            text(`steer.limit(${currentSpeedMM.toFixed(1)} * ${curI});`, lX, tY); tY += 22;
+            text("vel.add(steer); pos.add(p5.Vector.div(vel, 60));", lX, tY); tY += sp * 1.5;
 
-            // 【統一簽名字體】
-            textAlign(RIGHT, BOTTOM); textSize(26); fill(0);
-            textFont('Klee One');
-            text("Yuan.", width - 30, height - 25);
+            // 5. 創作概述 
+            fill(80); textSize(13); textLeading(22);
+            textAlign(LEFT);
+            text("創作概述：", lX, tY); tY += 24;
+            text(formatOverview(CREATION_TEXT_RAW, 22), lX, tY);
+
             pop();
         }
     </script>
