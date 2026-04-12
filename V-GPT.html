@@ -6,404 +6,166 @@
     <title>AI Spectacle - 資訊奇觀</title>
     <style>
         /* ====== 基礎設定 ====== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
-
-        body {
-            background-color: #212121;
-            color: #ECECEC;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            height: 100dvh; 
-        }
-
-        /* ====== 左側導覽列 (電腦版專屬) ====== */
-        .side-rail {
-            width: 60px;
-            background-color: #171717;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 0;
-            border-right: 1px solid #333;
-            flex-shrink: 0; /* 防止被擠壓 */
-        }
-
-        .side-rail .icon {
-            width: 32px;
-            height: 32px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            color: #b4b4b4;
-            border-radius: 8px;
-            transition: background 0.2s;
-        }
-
-        .side-rail .icon:hover { background-color: #2f2f2f; color: #fff; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        body { background-color: #212121; color: #ECECEC; display: flex; height: 100vh; overflow: hidden; height: 100dvh; }
 
         /* ====== 主要內容區 ====== */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
+        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; }
 
         /* ====== 頂部資訊列 ====== */
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            position: relative;
-        }
-
-        .top-bar-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        /* 漢堡選單 (電腦版預設隱藏) */
-        .hamburger-menu {
-            display: none;
-            cursor: pointer;
-            color: #ececec;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 左上角模型選擇器與下拉選單 */
-        .model-selector-wrapper {
-            position: relative;
-            z-index: 200;
-        }
-
-        .model-selector {
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            color: #ececec;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            transition: background-color 0.2s;
-        }
-        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; position: relative; z-index: 10; background-color: #212121; }
+        .top-bar-left { display: flex; align-items: center; gap: 12px; }
+        .hamburger-menu { display: none; cursor: pointer; color: #ececec; align-items: center; justify-content: center; }
+        .model-selector-wrapper { position: relative; z-index: 200; }
+        .model-selector { font-size: 18px; font-weight: 600; cursor: pointer; color: #ececec; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; transition: background 0.2s; }
         .model-selector:hover { background-color: #2f2f2f; }
-
-        /* 下拉選單 */
-        .model-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            margin-top: 5px;
-            background-color: #2f2f2f;
-            border-radius: 16px;
-            padding: 12px;
-            width: 340px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
-        }
-
-        .model-menu.show {
-            display: block;
-            animation: fadeIn 0.15s ease-out;
-        }
-
-        .model-menu-item {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 12px 16px;
-            border-radius: 12px;
-            cursor: default;
-            transition: background-color 0.2s;
-        }
-
+        .model-menu { display: none; position: absolute; top: 100%; left: 0; margin-top: 5px; background-color: #2f2f2f; border-radius: 16px; padding: 12px; width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05); }
+        .model-menu.show { display: block; animation: fadeIn 0.15s ease-out; }
+        .model-menu-item { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 12px; cursor: default; transition: background 0.2s; }
         .model-menu-item:hover { background-color: #404040; }
         .model-menu-icon { color: #b4b4b4; display: flex; align-items: center; justify-content: center; }
         .model-menu-icon svg { width: 24px; height: 24px; fill: none; }
         .model-menu-text { display: flex; flex-direction: column; gap: 4px; }
         .model-menu-name { font-size: 15px; color: #ececec; font-weight: 500; }
         .model-menu-desc { font-size: 13px; color: #b4b4b4; }
-
-        /* 置中的贊助按鈕區塊 */
-        .top-bar-center {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-        }
-
-        .donate-btn {
-            background-color: #3b3b4f;
-            color: #d1d5db;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: opacity 0.2s, background-color 0.2s, transform 0.1s;
-        }
-
+        
+        .top-bar-center { position: absolute; left: 50%; transform: translateX(-50%); z-index: 100; transition: opacity 0.3s; }
+        .donate-btn { background-color: #3b3b4f; color: #d1d5db; border: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.2s, background 0.2s, transform 0.1s; }
         .donate-btn:hover { opacity: 0.9; background-color: #4a4a6a; }
         .donate-btn:active { transform: scale(0.97); }
+        .right-icons { display: flex; gap: 15px; color: #ececec; cursor: pointer; transition: opacity 0.3s; }
+
+        /* ====== 中央舞台 (捲動區) ====== */
+        .center-stage { 
+            flex: 1; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            position: relative;
+            scroll-behavior: smooth;
+        }
+
+        .greeting-container { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .center-stage h1 { font-size: 32px; font-weight: 500; letter-spacing: 1px; transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease; }
+        .center-stage.keyboard-open h1 { transform: translateY(12vh); }
+
+        /* ====== 對話流設計 ====== */
+        .chat-feed { display: none; width: 100%; max-width: 800px; padding: 40px 20px 80px 20px; flex-direction: column; gap: 32px; }
+        .message-row { display: flex; width: 100%; }
         
-        .right-icons { display: flex; gap: 15px; color: #ececec; cursor: pointer; }
+        .user-row { justify-content: flex-end; }
+        .user-msg { background: #2f2f2f; color: #ececec; padding: 12px 18px; border-radius: 20px; font-size: 16px; max-width: 80%; word-break: break-all; }
 
-        /* ====== 中央舞台 ====== */
-        .center-stage {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 0 20px;
+        .ai-row { justify-content: flex-start; flex-direction: column; }
+        .ai-msg-content { position: relative; color: #ececec; font-size: 16px; line-height: 1.7; max-width: 100%; word-break: break-all; white-space: pre-wrap; }
+        .ai-msg-content span { display: inline; transition: opacity 0.2s ease; }
+        
+        .swap-clone {
+            position: absolute;
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            pointer-events: none; 
+            z-index: 10;
+            color: #ffffff; 
+            background-color: #212121; 
+            border-radius: 2px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5); 
         }
 
-        .center-stage h1 {
-            font-size: 32px;
-            font-weight: 500;
-            margin-bottom: 40px;
-            letter-spacing: 1px;
-            transition: opacity 0.3s ease, transform 0.3s ease; 
+        .ai-actions { display: flex; gap: 8px; margin-top: 12px; opacity: 0; transition: opacity 0.3s ease; }
+        .ai-action-btn { background: none; border: none; color: #b4b4b4; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s, color 0.2s; }
+        .ai-action-btn:hover { background-color: #2f2f2f; color: #ececec; }
+        .ai-action-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .ai-action-btn.filled { color: #ececec; }
+        .ai-action-btn.filled svg { fill: currentColor; }
+
+        /* ====== 置中的向下跳轉箭頭 (已移至外層容器) ====== */
+        @keyframes floatUpDown {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-6px); } 
         }
 
-        .center-stage.keyboard-open h1 {
-            transform: translateY(12vh); 
+        .scroll-down-btn { 
+            position: absolute; 
+            bottom: 110px; /* 懸浮在底部輸入框之上 */
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 50%; 
+            background-color: #2f2f2f; 
+            border: 1px solid #444; 
+            color: #ececec; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            z-index: 150; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+            animation: floatUpDown 2s ease-in-out infinite; 
         }
+        .scroll-down-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
 
         /* ====== 底部輸入列與附加浮窗 ====== */
-        .input-container {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto 40px auto;
-            padding: 0 20px;
-            position: relative;
-        }
-
-        .attach-menu {
-            display: none;
-            position: absolute;
-            bottom: calc(100% + 10px);
-            left: 20px;
-            background-color: #2f2f2f;
-            border-radius: 16px;
-            padding: 8px 0;
-            width: 240px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
-            z-index: 100;
-            flex-direction: column;
-        }
-
+        .input-container { width: 100%; max-width: 800px; margin: 0 auto 40px auto; padding: 0 20px; position: relative; z-index: 200; }
+        .attach-menu { display: none; position: absolute; bottom: calc(100% + 10px); left: 20px; background-color: #2f2f2f; border-radius: 16px; padding: 8px 0; width: 240px; box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05); z-index: 100; flex-direction: column; }
         .attach-menu.show { display: flex; animation: fadeIn 0.15s ease-out; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .menu-item {
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            color: #ececec;
-            font-size: 15px;
-            transition: background-color 0.1s; 
-        }
-
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .menu-item { padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; color: #ececec; font-size: 15px; transition: background-color 0.1s; }
         .menu-item:hover { background-color: #404040; }
-        
-        /* 閃爍動畫設計 */
-        @keyframes flashEffect {
-            0% { background-color: #2f2f2f; }
-            50% { background-color: #666666; } 
-            100% { background-color: #404040; }
-        }
-
-        .menu-item.flash-active {
-            animation: flashEffect 0.2s ease-out;
-            background-color: #666666 !important;
-        }
-
+        @keyframes flashEffect { 0% { background-color: #2f2f2f; } 50% { background-color: #666666; } 100% { background-color: #404040; } }
+        .menu-item.flash-active { animation: flashEffect 0.2s ease-out; background-color: #666666 !important; }
         .menu-item svg { width: 20px; height: 20px; color: #b4b4b4; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .menu-divider { height: 1px; background-color: #444; margin: 6px 16px; }
         .menu-item .arrow-right { margin-left: auto; width: 16px; height: 16px; }
 
-        /* 輸入框本體 */
-        .input-box {
-            background-color: #2f2f2f;
-            border-radius: 25px;
-            padding: 12px 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .icon-btn {
-            background: none;
-            border: none;
-            color: #b4b4b4;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            transition: background 0.2s, color 0.2s;
-        }
-
+        .input-box { background-color: #2f2f2f; border-radius: 25px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .icon-btn { background: none; border: none; color: #b4b4b4; cursor: pointer; display: flex; justify-content: center; align-items: center; width: 32px; height: 32px; border-radius: 50%; transition: background 0.2s, color 0.2s; }
         .icon-btn:hover { background-color: #404040; color: #fff; }
-        .icon-btn.recording { color: #ff4a4a; animation: pulse 1.5s infinite; }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .input-box input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #ECECEC;
-            font-size: 16px;
-            outline: none;
-        }
-
+        .input-box input { flex: 1; background: transparent; border: none; color: #ECECEC; font-size: 16px; outline: none; }
         .input-box input::placeholder { color: #8e8ea0; }
         svg { width: 20px; height: 20px; fill: currentColor; }
+        .disclaimer-text { display: none; }
 
-        /* 免責聲明 (電腦版預設隱藏) */
-        .disclaimer-text {
-            display: none;
-        }
-
-        /* =========================================
-           手機版專屬適配
-        ========================================= */
+        /* ====== 手機版適配 ====== */
         @media (max-width: 768px) {
-            /* 手機版隱藏側邊欄、贊助按鈕與右側圖示 */
-            .side-rail { display: none !important; }
             .top-bar-center { display: none !important; }
             .right-icons { display: none !important; }
-
-            /* 頂部列調整 */
             .top-bar { padding: 12px 16px; }
-
-            /* 移除了原本為漢堡選單保留的 gap，讓標題自然靠左 */
-            .top-bar-left { gap: 0; }
-
+            .top-bar-left { gap: 16px; }
+            .hamburger-menu { display: flex; width: 28px; height: 28px; }
             .model-selector { font-size: 20px; padding: 4px 8px; }
-
-            /* 中央文字放大符合手機比例 */
-            .center-stage { padding: 0 20px; }
             .center-stage h1 { font-size: 28px; font-weight: 600; }
-
-            /* 底部輸入區域放大與調整 */
-            .input-container {
-                padding: 0 16px;
-                margin-bottom: 24px;
-            }
-
-            .input-box { 
-                padding: 10px 14px; 
-                border-radius: 30px;
-            }
-
-            .input-box input {
-                font-size: 17px; 
-            }
-
-            .attach-menu {
-                width: calc(100vw - 32px);
-                left: 16px;
-                bottom: calc(100% + 12px);
-            }
-
+            .chat-feed { padding: 20px 16px 60px 16px; gap: 24px;}
+            .scroll-down-btn { width: 36px; height: 36px; bottom: 90px; }
+            .input-container { padding: 0 16px; margin-bottom: 24px; }
+            .input-box { padding: 10px 14px; border-radius: 30px; }
+            .input-box input { font-size: 17px; }
+            .attach-menu { width: calc(100vw - 32px); left: 16px; bottom: calc(100% + 12px); }
             .model-menu { width: 280px; }
-
-            #plus-btn {
-                background-color: #404040;
-                color: #ececec;
-                width: 36px;
-                height: 36px;
-            }
-
-            #mic-btn {
-                width: auto;
-                height: 36px;
-                border-radius: 18px;
-                padding: 0 14px;
-                background-color: #404040;
-                gap: 8px;
-            }
-            
-            #mic-btn::after {
-                content: "語音";
-                font-size: 15px;
-                font-weight: 500;
-                color: #ececec;
-                display: block;
-            }
-            
+            #plus-btn { background-color: #404040; color: #ececec; width: 36px; height: 36px; }
+            #mic-btn { width: auto; height: 36px; border-radius: 18px; padding: 0 14px; background-color: #404040; gap: 8px; }
+            #mic-btn::after { content: "語音"; font-size: 15px; font-weight: 500; color: #ececec; display: block; }
             #mic-btn svg { width: 18px; height: 18px; }
-
-            .disclaimer-text {
-                display: block;
-                font-size: 12px;
-                color: #8e8ea0;
-                text-align: center;
-                margin-top: 16px;
-                line-height: 1.4;
-                padding: 0 10px;
-            }
+            .disclaimer-text { display: block; font-size: 12px; color: #8e8ea0; text-align: center; margin-top: 16px; line-height: 1.4; padding: 0 10px; }
         }
     </style>
 </head>
 <body>
 
-    <nav class="side-rail">
-        <div class="icon" title="新對話">
-            <svg viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
-        </div>
-        <div class="icon" title="搜尋" onclick="window.open('https://www.google.com', '_blank')">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
-        </div>
-    </nav>
-
     <main class="main-content">
         <header class="top-bar">
-            
             <div class="top-bar-left">
+                <div class="hamburger-menu" id="hamburger-menu">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="10" x2="20" y2="10"></line><line x1="4" y1="14" x2="20" y2="14"></line></svg>
+                </div>
                 <div class="model-selector-wrapper">
                     <div class="model-selector" id="vgpt-title">
                         V-GPT <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
                     </div>
                     <div class="model-menu" id="model-menu">
                         <div class="model-menu-item">
-                            <div class="model-menu-icon">
-                                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18m-9-9h18M19 5l-2 2M5 19l2-2M5 5l2 2m12 12l-2-2"/></svg>
-                            </div>
+                            <div class="model-menu-icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18m-9-9h18M19 5l-2 2M5 19l2-2M5 5l2 2m12 12l-2-2"/></svg></div>
                             <div class="model-menu-text">
                                 <div class="model-menu-name">Video Generative Pre-trained Transformer</div>
                                 <div class="model-menu-desc">影片生成預訓練模型</div>
@@ -412,211 +174,387 @@
                     </div>
                 </div>
             </div>
-
-            <div class="top-bar-center">
-                <button class="donate-btn" onclick="alert('跳轉至贊助頁面...')">
-                    ✨ 贊助作者
-                </button>
-            </div>
-
-            <div class="right-icons">
-                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg>
-            </div>
+            
+            <div class="top-bar-center" id="top-sponsor"><button class="donate-btn" onclick="alert('跳轉至贊助頁面...')">✨ 贊助作者</button></div>
+            <div class="right-icons" id="top-icons"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg></div>
         </header>
 
-        <section class="center-stage" id="canvas-container">
-            <h1 id="greeting-text">我們該從哪裡開始？</h1>
+        <section class="center-stage" id="center-stage">
+            <div class="greeting-container" id="greeting-container">
+                <h1 id="greeting-text">我們該從哪裡開始？</h1>
+            </div>
+            <div class="chat-feed" id="chat-feed"></div>
         </section>
 
+        <button class="scroll-down-btn" id="scroll-down-btn">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+
         <footer class="input-container">
-            
             <div class="attach-menu" id="attach-menu">
-                <div class="menu-item" id="menu-upload">
-                    <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-                    新增照片和檔案
-                </div>
+                <div class="menu-item" id="menu-upload"><svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>新增照片和檔案</div>
                 <div class="menu-divider"></div>
-                <div class="menu-item" id="menu-create">
-                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    創作圖像
-                </div>
-                <div class="menu-item" id="menu-think">
-                    <svg viewBox="0 0 24 24"><path d="M9 18h6m-3-13v2m-5.657.343l1.414 1.414m8.486 0l1.414-1.414M6 12h2m8 0h2M9 22h6c1.105 0 2-.895 2-2H7c0 1.105.895 2 2 2z"/><circle cx="12" cy="11" r="5"/></svg>
-                    思考
-                </div>
-                <div class="menu-item" id="menu-research">
-                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6l4 2"/></svg>
-                    深入研究
-                </div>
-                <div class="menu-item" id="menu-more">
-                    <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
-                    更多
-                    <svg class="arrow-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
+                <div class="menu-item" id="menu-create"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>創作圖像</div>
+                <div class="menu-item" id="menu-think"><svg viewBox="0 0 24 24"><path d="M9 18h6m-3-13v2m-5.657.343l1.414 1.414m8.486 0l1.414-1.414M6 12h2m8 0h2M9 22h6c1.105 0 2-.895 2-2H7c0 1.105.895 2 2 2z"/><circle cx="12" cy="11" r="5"/></svg>思考</div>
+                <div class="menu-item" id="menu-research"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6l4 2"/></svg>深入研究</div>
+                <div class="menu-item" id="menu-more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></svg>更多<svg class="arrow-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
             </div>
 
             <div class="input-box">
-                <button class="icon-btn" id="plus-btn" title="附加">
-                    <svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
-                </button>
+                <button class="icon-btn" id="plus-btn" title="附加"><svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
                 <input type="file" id="file-upload" hidden accept="image/*">
-                
                 <input type="text" id="user-input" placeholder="想問就問">
-                
-                <button class="icon-btn" id="mic-btn" title="語音輸入">
-                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: none;">
-                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                        <line x1="12" y1="19" x2="12" y2="22"></line>
-                        <line x1="8" y1="22" x2="16" y2="22"></line>
-                    </svg>
-                </button>
+                <button class="icon-btn" id="mic-btn" title="語音輸入"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: none;"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line><line x1="8" y1="22" x2="16" y2="22"></line></svg></button>
             </div>
-
-            <div class="disclaimer-text">
-                傳送訊息至人工智慧聊天機器人 V-GPT，即表示你同意我們的條款，並已閱讀我們的《隱私權政策》。
-            </div>
-
+            <div class="disclaimer-text">傳送訊息至人工智慧聊天機器人 V-GPT，即表示你同意我們的條款，並已閱讀我們的《隱私權政策》。</div>
         </footer>
     </main>
 
     <script>
         const inputField = document.getElementById('user-input');
+        const centerStage = document.getElementById('center-stage');
+        const greetingContainer = document.getElementById('greeting-container');
         const greetingText = document.getElementById('greeting-text');
-        const canvasContainer = document.getElementById('canvas-container');
-        const micBtn = document.getElementById('mic-btn');
-        
-        // 浮窗與按鈕元素
+        const chatFeed = document.getElementById('chat-feed');
+        const scrollBtn = document.getElementById('scroll-down-btn');
+        const topSponsor = document.getElementById('top-sponsor');
+        const topIcons = document.getElementById('top-icons');
+
+        // ==== 全局狀態 ====
+        let historyText = ""; 
+        let totalGeneratedChars = 0; 
+
+        // ==== UI 選單互動邏輯 ====
         const plusBtn = document.getElementById('plus-btn');
         const attachMenu = document.getElementById('attach-menu');
-        const fileUpload = document.getElementById('file-upload');
-        
         const vgptTitle = document.getElementById('vgpt-title');
         const modelMenu = document.getElementById('model-menu');
-        
-        const menuUpload = document.getElementById('menu-upload');
-        const menuCreate = document.getElementById('menu-create');
-        const menuThink = document.getElementById('menu-think');
-        const menuResearch = document.getElementById('menu-research');
-        const menuMore = document.getElementById('menu-more');
 
-        // ==== 手機版專屬：輸入框聚焦時文字下移 ====
-        inputField.addEventListener('focus', () => {
-            if (window.innerWidth <= 768) {
-                canvasContainer.classList.add('keyboard-open');
-            }
+        vgptTitle.addEventListener('click', (e) => { e.stopPropagation(); modelMenu.classList.toggle('show'); attachMenu.classList.remove('show'); });
+        plusBtn.addEventListener('click', (e) => { e.stopPropagation(); attachMenu.classList.toggle('show'); modelMenu.classList.remove('show'); });
+        document.addEventListener('click', (e) => {
+            if (!attachMenu.contains(e.target) && !plusBtn.contains(e.target)) attachMenu.classList.remove('show');
+            if (!modelMenu.contains(e.target) && !vgptTitle.contains(e.target)) modelMenu.classList.remove('show');
         });
 
-        inputField.addEventListener('blur', () => {
-            canvasContainer.classList.remove('keyboard-open');
-        });
-
-        // 閃爍並改變文字的通用函數
+        // 修改這裡：讓選單按鈕只改變中間的字，而不是發送訊息
         function handleMenuClick(buttonElement, text) {
-            // 加上閃爍 class
             buttonElement.classList.add('flash-active');
-            
-            // 延遲 0.2 秒，讓使用者看到閃光後，再變更文字與收合選單
             setTimeout(() => {
                 buttonElement.classList.remove('flash-active');
-                greetingText.style.display = 'block';
-                greetingText.innerText = text;
                 attachMenu.classList.remove('show');
+                
+                // 如果畫面中央的歡迎詞還在，就覆蓋掉它
+                if (greetingContainer.style.display !== 'none') {
+                    greetingText.style.opacity = '0';
+                    setTimeout(() => {
+                        greetingText.innerText = text;
+                        greetingText.style.opacity = '1';
+                        
+                        // 加上一點故障/生氣的動畫提示
+                        if(Math.random() > 0.5) {
+                            greetingText.style.color = '#ff4a4a';
+                            setTimeout(() => { greetingText.style.color = '#ececec'; }, 300);
+                        }
+                    }, 200);
+                } else {
+                    // 如果已經開始聊天了，就把文字塞進輸入框
+                    inputField.value += text;
+                }
             }, 200); 
         }
 
-        // 綁定底部選單嘲諷文字事件 (帶閃爍效果)
-        menuCreate.addEventListener('click', (e) => handleMenuClick(e.currentTarget, 'Ai不能創作'));
-        menuThink.addEventListener('click', (e) => handleMenuClick(e.currentTarget, 'Ai不會思考'));
-        menuResearch.addEventListener('click', (e) => handleMenuClick(e.currentTarget, '請自己研究'));
-        menuMore.addEventListener('click', (e) => handleMenuClick(e.currentTarget, '沒有更多'));
+        document.getElementById('menu-upload').addEventListener('click', (e) => handleMenuClick(e.currentTarget, '無法上傳檔案'));
+        document.getElementById('menu-create').addEventListener('click', (e) => handleMenuClick(e.currentTarget, 'Ai不能創作'));
+        document.getElementById('menu-think').addEventListener('click', (e) => handleMenuClick(e.currentTarget, 'Ai不會思考'));
+        document.getElementById('menu-research').addEventListener('click', (e) => handleMenuClick(e.currentTarget, '請自己研究'));
+        document.getElementById('menu-more').addEventListener('click', (e) => handleMenuClick(e.currentTarget, '沒有更多'));
 
-        // V-GPT 下拉選單開關邏輯
-        vgptTitle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            modelMenu.classList.toggle('show');
-            attachMenu.classList.remove('show');
-        });
+        // 產生混亂字串：加入 AI 排版幻覺與相鄰去重
+        function generateChaosString() {
+            if(historyText.length === 0) return "無效輸入。";
+            
+            const numLines = Math.floor(Math.random() * 39) + 2; 
+            
+            let rawResult = "";
+            const listMarkers = ["- ", "* ", "1. ", "> ", "### "];
+            const dividers = ["\n---\n", "\n___\n", "\n\n"];
 
-        // 附加按鈕選單開關邏輯
-        plusBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            attachMenu.classList.toggle('show');
-            modelMenu.classList.remove('show');
-        });
+            for (let i = 0; i < numLines; i++) {
+                let lineStr = "";
+                let lineLength = Math.floor(Math.random() * 25) + 5; 
 
-        // 點擊空白處自動收合所有選單
-        document.addEventListener('click', (e) => {
-            if (!attachMenu.contains(e.target) && !plusBtn.contains(e.target)) {
-                attachMenu.classList.remove('show');
+                if (Math.random() < 0.15) {
+                    lineStr += listMarkers[Math.floor(Math.random() * listMarkers.length)];
+                }
+
+                while (lineStr.length < lineLength) {
+                    let chunkSize = Math.floor(Math.random() * 3) + 1;
+                    let startIdx = Math.floor(Math.random() * historyText.length);
+                    lineStr += historyText.substring(startIdx, startIdx + chunkSize);
+                }
+
+                rawResult += lineStr;
+
+                if (i < numLines - 1) {
+                    if (Math.random() < 0.1) {
+                        rawResult += dividers[Math.floor(Math.random() * dividers.length)];
+                    } else {
+                        rawResult += "\n"; 
+                    }
+                }
             }
-            if (!modelMenu.contains(e.target) && !vgptTitle.contains(e.target)) {
-                modelMenu.classList.remove('show');
+
+            let finalResult = rawResult[0] || "";
+            for (let i = 1; i < rawResult.length; i++) {
+                let char = rawResult[i];
+                if (char === rawResult[i - 1]) {
+                    if (char === '-' || char === '_' || char === '\n') {
+                        finalResult += char;
+                    }
+                } else {
+                    finalResult += char;
+                }
             }
-        });
 
-        // 檔案上傳邏輯
-        menuUpload.addEventListener('click', () => {
-            attachMenu.classList.remove('show');
-            fileUpload.click();
-        });
+            return finalResult;
+        }
 
-        fileUpload.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                const fileName = this.files[0].name;
-                console.log("用戶上傳了:", fileName);
-                greetingText.style.display = 'block';
-                greetingText.innerText = "正在解構圖片...";
+        function processUserInput(text) {
+            if (text.trim() === '') return;
+            historyText += text.replace(/\s+/g, ''); 
+
+            greetingContainer.style.display = 'none';
+            chatFeed.style.display = 'flex';
+            topSponsor.style.opacity = '0';
+            topIcons.style.opacity = '0';
+            setTimeout(() => { topSponsor.style.display = 'none'; topIcons.style.display = 'none'; }, 300);
+
+            const userRow = document.createElement('div');
+            userRow.className = 'message-row user-row';
+            userRow.innerHTML = `<div class="user-msg">${text}</div>`;
+            chatFeed.appendChild(userRow);
+
+            scrollToBottom();
+            generateAiResponse();
+        }
+
+        function findAdjacentSpan(baseIdx, spans, direction) {
+            const baseSpan = spans[baseIdx];
+            if (!baseSpan || baseSpan.dataset.isSwapping) return null;
+
+            const bx = baseSpan.offsetLeft;
+            const by = baseSpan.offsetTop;
+
+            if (direction === 'horizontal') {
+                let candidates = [];
+                let leftIdx = baseIdx - 1;
+                let rightIdx = baseIdx + 1;
+                
+                if (spans[leftIdx] && spans[leftIdx].textContent !== '\n' && !spans[leftIdx].dataset.isSwapping) candidates.push(leftIdx);
+                if (spans[rightIdx] && spans[rightIdx].textContent !== '\n' && !spans[rightIdx].dataset.isSwapping) candidates.push(rightIdx);
+                
+                if (candidates.length > 0) return candidates[Math.floor(Math.random() * candidates.length)];
+            } else {
+                let candidates = [];
+                for (let i = Math.max(0, baseIdx - 30); i < Math.min(spans.length, baseIdx + 30); i++) {
+                    if (i === baseIdx || spans[i].textContent === '\n' || spans[i].dataset.isSwapping) continue;
+                    let sx = spans[i].offsetLeft;
+                    let sy = spans[i].offsetTop;
+                    if (Math.abs(sx - bx) < 15 && Math.abs(sy - by) > 15 && Math.abs(sy - by) < 40) {
+                        candidates.push(i);
+                    }
+                }
+                if (candidates.length > 0) return candidates[Math.floor(Math.random() * candidates.length)];
             }
-        });
+            return null;
+        }
 
-        // 文字輸入邏輯
-        inputField.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter' && this.value.trim() !== '') {
-                console.log("用戶輸入了:", this.value);
-                greetingText.style.display = 'block';
-                greetingText.innerText = "無法處理輸入。";
-                this.value = '';
-                this.blur(); 
+        function triggerSwapAnimation(span1, span2, aiContent) {
+            if (span1.textContent === '\n' || span2.textContent === '\n' || span1.textContent === span2.textContent) return;
+
+            span1.dataset.isSwapping = "true";
+            span2.dataset.isSwapping = "true";
+
+            const x1 = span1.offsetLeft;
+            const y1 = span1.offsetTop;
+            const x2 = span2.offsetLeft;
+            const y2 = span2.offsetTop;
+
+            const clone1 = document.createElement('span');
+            clone1.textContent = span1.textContent;
+            clone1.className = 'swap-clone';
+            clone1.style.left = x1 + 'px';
+            clone1.style.top = y1 + 'px';
+
+            const clone2 = document.createElement('span');
+            clone2.textContent = span2.textContent;
+            clone2.className = 'swap-clone';
+            clone2.style.left = x2 + 'px';
+            clone2.style.top = y2 + 'px';
+
+            aiContent.appendChild(clone1);
+            aiContent.appendChild(clone2);
+
+            span1.style.opacity = '0';
+            span2.style.opacity = '0';
+
+            void clone1.offsetWidth; 
+
+            clone1.style.left = x2 + 'px';
+            clone1.style.top = y2 + 'px';
+            clone2.style.left = x1 + 'px';
+            clone2.style.top = y1 + 'px';
+
+            setTimeout(() => {
+                let temp = span1.textContent;
+                span1.textContent = span2.textContent;
+                span2.textContent = temp;
+                
+                span1.style.opacity = '1';
+                span2.style.opacity = '1';
+                
+                clone1.remove();
+                clone2.remove();
+
+                delete span1.dataset.isSwapping;
+                delete span2.dataset.isSwapping;
+            }, 1200); 
+        }
+
+        function generateAiResponse() {
+            const aiRow = document.createElement('div');
+            aiRow.className = 'message-row ai-row';
+            
+            const aiContent = document.createElement('div');
+            aiContent.className = 'ai-msg-content';
+            
+            aiRow.appendChild(aiContent);
+            chatFeed.appendChild(aiRow);
+            scrollToBottom();
+
+            const chaosString = generateChaosString();
+            let currentSpans = []; 
+            let i = 0;
+
+            function typeChar() {
+                if (i < chaosString.length) {
+                    const char = chaosString[i];
+                    totalGeneratedChars++;
+
+                    const span = document.createElement('span');
+                    span.textContent = char;
+                    aiContent.appendChild(span);
+                    currentSpans.push(span);
+
+                    let swapProb = Math.min(totalGeneratedChars / 2000, 0.4); 
+
+                    if (currentSpans.length > 15 && Math.random() < swapProb) {
+                        let validIdxs = [];
+                        for (let j = 0; j < currentSpans.length; j++) {
+                            if (!currentSpans[j].dataset.isSwapping && currentSpans[j].textContent !== '\n') {
+                                validIdxs.push(j);
+                            }
+                        }
+                        
+                        if (validIdxs.length > 0) {
+                            let idx1 = validIdxs[Math.floor(Math.random() * validIdxs.length)];
+                            let direction = Math.random() > 0.5 ? 'horizontal' : 'vertical';
+                            let idx2 = findAdjacentSpan(idx1, currentSpans, direction);
+                            
+                            if (idx2 !== null && idx1 !== idx2) {
+                                triggerSwapAnimation(currentSpans[idx1], currentSpans[idx2], aiContent);
+                            }
+                        }
+                    }
+
+                    i++;
+
+                    // 確保輸入文字時會稍微滑到底部
+                    const isAtBottom = centerStage.scrollHeight - centerStage.scrollTop <= centerStage.clientHeight + 10;
+                    if (isAtBottom) scrollToBottom();
+
+                    let speed = Math.random() < 0.8 ? Math.random() * 30 + 10 : Math.random() * 100 + 50; 
+                    setTimeout(typeChar, speed);
+                } else {
+                    addAiActions(aiRow, currentSpans);
+                }
             }
-        });
+            
+            setTimeout(typeChar, 300);
+        }
 
-        // 語音輸入邏輯
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'zh-TW';
-            recognition.interimResults = false;
+        function addAiActions(parentRow, currentSpans) {
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'ai-actions';
+            
+            const copyIcon = `<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+            const checkIcon = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
-            micBtn.addEventListener('click', () => {
-                recognition.start();
+            actionsDiv.innerHTML = `
+                <button class="ai-action-btn copy-btn" title="複製">${copyIcon}</button>
+                <button class="ai-action-btn redo-btn" title="重新產生"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg></button>
+                <button class="ai-action-btn like-btn" title="好回應"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg></button>
+                <button class="ai-action-btn dislike-btn" title="壞回應"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg></button>
+            `;
+            parentRow.appendChild(actionsDiv);
+            setTimeout(() => { actionsDiv.style.opacity = '1'; }, 50);
+
+            const copyBtn = actionsDiv.querySelector('.copy-btn');
+            const redoBtn = actionsDiv.querySelector('.redo-btn');
+            const likeBtn = actionsDiv.querySelector('.like-btn');
+            const dislikeBtn = actionsDiv.querySelector('.dislike-btn');
+
+            copyBtn.addEventListener('click', () => {
+                const finalStr = currentSpans.map(s => s.textContent).join('');
+                navigator.clipboard.writeText(finalStr).then(() => {
+                    copyBtn.innerHTML = checkIcon;
+                    setTimeout(() => { copyBtn.innerHTML = copyIcon; }, 2000); 
+                });
             });
 
-            recognition.addEventListener('audiostart', () => {
-                micBtn.classList.add('recording');
-                inputField.placeholder = "正在聆聽...";
+            redoBtn.addEventListener('click', () => {
+                parentRow.remove();
+                generateAiResponse();
             });
 
-            recognition.addEventListener('result', (e) => {
-                const transcript = e.results[0][0].transcript;
-                inputField.value += transcript;
+            likeBtn.addEventListener('click', () => {
+                likeBtn.classList.add('filled');
+                dislikeBtn.classList.remove('filled');
             });
 
-            recognition.addEventListener('audioend', () => {
-                micBtn.classList.remove('recording');
-                inputField.placeholder = "想問就問";
-            });
-
-            recognition.addEventListener('error', (e) => {
-                micBtn.classList.remove('recording');
-                inputField.placeholder = "想問就問";
-            });
-        } else {
-            micBtn.addEventListener('click', () => {
-                greetingText.style.display = 'block';
-                greetingText.innerText = '語音模組已損壞';
+            dislikeBtn.addEventListener('click', () => {
+                dislikeBtn.classList.add('filled');
+                likeBtn.classList.remove('filled');
             });
         }
+
+        // 修改捲動功能，加入 smooth 滑順效果
+        function scrollToBottom() {
+            centerStage.scrollTo({
+                top: centerStage.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        centerStage.addEventListener('scroll', () => {
+            const isAtBottom = centerStage.scrollHeight - centerStage.scrollTop <= centerStage.clientHeight + 15; 
+            if (!isAtBottom) scrollBtn.style.display = 'flex';
+            else scrollBtn.style.display = 'none';
+        });
+
+        scrollBtn.addEventListener('click', scrollToBottom);
+
+        inputField.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && this.value.trim() !== '') {
+                processUserInput(this.value);
+                this.value = '';
+                this.blur();
+            }
+        });
+
+        inputField.addEventListener('focus', () => { if (window.innerWidth <= 768) centerStage.classList.add('keyboard-open'); });
+        inputField.addEventListener('blur', () => { centerStage.classList.remove('keyboard-open'); });
     </script>
 </body>
 </html>
