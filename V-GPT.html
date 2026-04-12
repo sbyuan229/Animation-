@@ -19,8 +19,7 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
-            /* 避免 iOS Safari 下方的選單列遮擋 */
-            height: 100dvh; 
+            height: 100dvh; /* 確保適應手機瀏覽器底部的動態網址列 */
         }
 
         /* ====== 左側導覽列 (電腦版) ====== */
@@ -181,7 +180,13 @@
             font-weight: 500;
             margin-bottom: 40px;
             letter-spacing: 1px;
-            transition: opacity 0.3s ease;
+            /* 加入過渡動畫，包含透明度與位移 */
+            transition: opacity 0.3s ease, transform 0.3s ease; 
+        }
+
+        /* 鍵盤彈出時的位移樣式 */
+        .center-stage.keyboard-open h1 {
+            transform: translateY(12vh); /* 往下移動，數值可依喜好微調 */
         }
 
         /* ====== 底部輸入列與附加浮窗 ====== */
@@ -286,10 +291,14 @@
            當螢幕小於 768px 時觸發
         ========================================= */
         @media (max-width: 768px) {
-            /* 1. 隱藏左側導覽列 (強制) */
+            /* 1. 隱藏左側導覽列 */
             .side-rail { display: none !important; }
 
-            /* 2. 頂部列調整 */
+            /* 2. 隱藏贊助作者按鈕與右側圖示 */
+            .top-bar-center { display: none !important; }
+            .right-icons { display: none !important; }
+
+            /* 3. 頂部列調整 */
             .top-bar { padding: 12px 16px; }
             .top-bar-left { gap: 16px; }
 
@@ -300,45 +309,28 @@
                 height: 28px;
             }
 
-            .model-selector { font-size: 18px; padding: 4px 8px; }
+            /* 稍微放大左上角標題 */
+            .model-selector { font-size: 20px; padding: 4px 8px; }
 
-            /* 將贊助按鈕推到右上角，並偽裝成登入按鈕的白底風格 */
-            .top-bar-center {
-                position: static;
-                transform: none;
-                display: flex;
-                align-items: center;
-            }
-            
-            .donate-btn {
-                background-color: #ffffff;
-                color: #000000;
-                font-weight: 600;
-                padding: 8px 16px;
-                font-size: 14px;
-            }
-
-            /* 隱藏原本右上角的圖示 */
-            .right-icons { display: none; }
-
-            /* 3. 中央文字縮小符合手機比例 */
+            /* 4. 中央文字放大符合手機比例 */
             .center-stage { padding: 0 20px; }
             .center-stage h1 { font-size: 28px; font-weight: 600; }
 
-            /* 4. 底部輸入區域調整 */
+            /* 5. 底部輸入區域放大與調整 */
             .input-container {
                 padding: 0 16px;
                 margin-bottom: 24px;
             }
 
-            /* 輸入框內部放大，更適合手指點擊 */
+            /* 輸入框內部稍微變大，更適合手指點擊 */
             .input-box { 
-                padding: 8px 12px; 
+                padding: 10px 14px; 
                 border-radius: 30px;
             }
 
-            /* 按鈕放大確保好點擊 */
-            .icon-btn { width: 36px; height: 36px; }
+            .input-box input {
+                font-size: 17px; /* 放大多一點點，且避免 iOS 自動縮放 */
+            }
 
             /* 選單寬度適應手機 */
             .attach-menu {
@@ -347,14 +339,14 @@
                 bottom: calc(100% + 12px);
             }
 
-            .model-menu {
-                width: 280px;
-            }
+            .model-menu { width: 280px; }
 
             /* 加號按鈕加上底色 */
             #plus-btn {
                 background-color: #404040;
                 color: #ececec;
+                width: 36px;
+                height: 36px;
             }
 
             /* 麥克風按鈕變成藥丸形狀，並加入文字 */
@@ -375,12 +367,9 @@
                 display: block;
             }
             
-            #mic-btn svg {
-                width: 18px;
-                height: 18px;
-            }
+            #mic-btn svg { width: 18px; height: 18px; }
 
-            /* 5. 顯示底部的免責聲明文字 */
+            /* 6. 顯示底部的免責聲明文字 */
             .disclaimer-text {
                 display: block;
                 font-size: 12px;
@@ -481,7 +470,7 @@
                 </button>
                 <input type="file" id="file-upload" hidden accept="image/*">
                 
-                <input type="text" id="user-input" placeholder="想問就問" style="font-size: 16px;">
+                <input type="text" id="user-input" placeholder="想問就問">
                 
                 <button class="icon-btn" id="mic-btn" title="語音輸入">
                     <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: none;">
@@ -503,6 +492,7 @@
     <script>
         const inputField = document.getElementById('user-input');
         const greetingText = document.getElementById('greeting-text');
+        const canvasContainer = document.getElementById('canvas-container');
         const micBtn = document.getElementById('mic-btn');
         const hamburgerMenu = document.getElementById('hamburger-menu');
         
@@ -519,6 +509,17 @@
         const menuThink = document.getElementById('menu-think');
         const menuResearch = document.getElementById('menu-research');
         const menuMore = document.getElementById('menu-more');
+
+        // ==== 手機版專屬：輸入框聚焦時文字下移 ====
+        inputField.addEventListener('focus', () => {
+            if (window.innerWidth <= 768) {
+                canvasContainer.classList.add('keyboard-open');
+            }
+        });
+
+        inputField.addEventListener('blur', () => {
+            canvasContainer.classList.remove('keyboard-open');
+        });
 
         // 更新中央文字的通用函數
         function changeGreetingText(text) {
@@ -583,6 +584,8 @@
                 console.log("用戶輸入了:", this.value);
                 changeGreetingText("無法處理輸入。");
                 this.value = '';
+                // 送出後自動收起鍵盤與文字復原
+                this.blur(); 
             }
         });
 
