@@ -10,7 +10,13 @@
         body { background-color: #212121; color: #ECECEC; display: flex; height: 100vh; overflow: hidden; height: 100dvh; }
 
         /* ====== 主要內容區 ====== */
-        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .main-content { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            padding-bottom: 70px; 
+        }
 
         /* ====== 頂部資訊列 ====== */
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; position: relative; z-index: 10; background-color: #212121; }
@@ -79,7 +85,7 @@
         .ai-action-btn.filled { color: #ececec; }
         .ai-action-btn.filled svg { fill: currentColor; }
 
-        /* ====== 置中的向下跳轉箭頭 (已移至外層容器) ====== */
+        /* ====== 置中的向下跳轉箭頭 ====== */
         @keyframes floatUpDown {
             0%, 100% { transform: translateX(-50%) translateY(0); }
             50% { transform: translateX(-50%) translateY(-6px); } 
@@ -87,7 +93,7 @@
 
         .scroll-down-btn { 
             position: absolute; 
-            bottom: 110px; /* 懸浮在底部輸入框之上 */
+            bottom: 110px; 
             left: 50%; 
             transform: translateX(-50%); 
             width: 32px; 
@@ -107,7 +113,18 @@
         .scroll-down-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
 
         /* ====== 底部輸入列與附加浮窗 ====== */
-        .input-container { width: 100%; max-width: 800px; margin: 0 auto 40px auto; padding: 0 20px; position: relative; z-index: 200; }
+        .input-container { 
+            position: fixed; 
+            bottom: 0;
+            width: 100%; 
+            max-width: 800px; 
+            left: 50%;
+            transform: translateX(-50%); 
+            padding: 0 20px 20px 20px; 
+            z-index: 200; 
+            background-color: #212121; 
+        }
+        
         .attach-menu { display: none; position: absolute; bottom: calc(100% + 10px); left: 20px; background-color: #2f2f2f; border-radius: 16px; padding: 8px 0; width: 240px; box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05); z-index: 100; flex-direction: column; }
         .attach-menu.show { display: flex; animation: fadeIn 0.15s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -119,12 +136,30 @@
         .menu-divider { height: 1px; background-color: #444; margin: 6px 16px; }
         .menu-item .arrow-right { margin-left: auto; width: 16px; height: 16px; }
 
-        .input-box { background-color: #2f2f2f; border-radius: 25px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .input-box { background-color: #2f2f2f; border-radius: 25px; padding: 10px 15px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .icon-btn { background: none; border: none; color: #b4b4b4; cursor: pointer; display: flex; justify-content: center; align-items: center; width: 32px; height: 32px; border-radius: 50%; transition: background 0.2s, color 0.2s; }
         .icon-btn:hover { background-color: #404040; color: #fff; }
-        .input-box input { flex: 1; background: transparent; border: none; color: #ECECEC; font-size: 16px; outline: none; }
+        .input-box input { flex: 1; background: transparent; border: none; color: #ECECEC; font-size: 16px; outline: none; min-width: 0; }
         .input-box input::placeholder { color: #8e8ea0; }
         svg { width: 20px; height: 20px; fill: currentColor; }
+        
+        /* 修改點：針對發送按鈕的完美置中與樣式微調 */
+        #send-btn { 
+            background-color: #ececec; 
+            color: #212121; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 0; 
+        }
+        #send-btn:hover { background-color: #ffffff; }
+        #send-btn svg { 
+            width: 18px; 
+            height: 18px; 
+            /* 紙飛機圖案視覺重心在右上，所以我們硬把它往左下推 1px 達到視覺平衡 */
+            transform: translate(-1px, 1px); 
+        }
+
         .disclaimer-text { display: none; }
 
         /* ====== 手機版適配 ====== */
@@ -137,17 +172,20 @@
             .model-selector { font-size: 20px; padding: 4px 8px; }
             .center-stage h1 { font-size: 28px; font-weight: 600; }
             .chat-feed { padding: 20px 16px 60px 16px; gap: 24px;}
-            .scroll-down-btn { width: 36px; height: 36px; bottom: 90px; }
-            .input-container { padding: 0 16px; margin-bottom: 24px; }
-            .input-box { padding: 10px 14px; border-radius: 30px; }
+            
+            .input-container { padding: 0 16px 16px 16px; margin-bottom: 0; }
+            .scroll-down-btn { width: 36px; height: 36px; bottom: 85px; }
+            .input-box { padding: 8px 12px; border-radius: 30px; gap: 6px; }
             .input-box input { font-size: 17px; }
             .attach-menu { width: calc(100vw - 32px); left: 16px; bottom: calc(100% + 12px); }
             .model-menu { width: 280px; }
-            #plus-btn { background-color: #404040; color: #ececec; width: 36px; height: 36px; }
-            #mic-btn { width: auto; height: 36px; border-radius: 18px; padding: 0 14px; background-color: #404040; gap: 8px; }
-            #mic-btn::after { content: "語音"; font-size: 15px; font-weight: 500; color: #ececec; display: block; }
-            #mic-btn svg { width: 18px; height: 18px; }
-            .disclaimer-text { display: block; font-size: 12px; color: #8e8ea0; text-align: center; margin-top: 16px; line-height: 1.4; padding: 0 10px; }
+            #plus-btn { background-color: transparent; width: 32px; height: 32px; }
+            
+            #mic-btn { width: 32px; height: 32px; border-radius: 50%; padding: 0; background-color: transparent; }
+            #mic-btn::after { display: none; }
+            
+            .disclaimer-text { display: block; font-size: 12px; color: #8e8ea0; text-align: center; margin-top: 12px; line-height: 1.4; padding: 0 10px; }
+            .main-content { padding-bottom: 90px; } 
         }
     </style>
 </head>
@@ -204,7 +242,12 @@
                 <button class="icon-btn" id="plus-btn" title="附加"><svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
                 <input type="file" id="file-upload" hidden accept="image/*">
                 <input type="text" id="user-input" placeholder="想問就問">
+                
                 <button class="icon-btn" id="mic-btn" title="語音輸入"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: none;"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line><line x1="8" y1="22" x2="16" y2="22"></line></svg></button>
+                
+                <button class="icon-btn" id="send-btn" title="發送訊息">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: none;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
             </div>
             <div class="disclaimer-text">傳送訊息至人工智慧聊天機器人 V-GPT，即表示你同意我們的條款，並已閱讀我們的《隱私權政策》。</div>
         </footer>
@@ -219,6 +262,7 @@
         const scrollBtn = document.getElementById('scroll-down-btn');
         const topSponsor = document.getElementById('top-sponsor');
         const topIcons = document.getElementById('top-icons');
+        const sendBtn = document.getElementById('send-btn');
 
         // ==== 全局狀態 ====
         let historyText = ""; 
@@ -237,28 +281,24 @@
             if (!modelMenu.contains(e.target) && !vgptTitle.contains(e.target)) modelMenu.classList.remove('show');
         });
 
-        // 修改這裡：讓選單按鈕只改變中間的字，而不是發送訊息
         function handleMenuClick(buttonElement, text) {
             buttonElement.classList.add('flash-active');
             setTimeout(() => {
                 buttonElement.classList.remove('flash-active');
                 attachMenu.classList.remove('show');
                 
-                // 如果畫面中央的歡迎詞還在，就覆蓋掉它
                 if (greetingContainer.style.display !== 'none') {
                     greetingText.style.opacity = '0';
                     setTimeout(() => {
                         greetingText.innerText = text;
                         greetingText.style.opacity = '1';
                         
-                        // 加上一點故障/生氣的動畫提示
                         if(Math.random() > 0.5) {
                             greetingText.style.color = '#ff4a4a';
                             setTimeout(() => { greetingText.style.color = '#ececec'; }, 300);
                         }
                     }, 200);
                 } else {
-                    // 如果已經開始聊天了，就把文字塞進輸入框
                     inputField.value += text;
                 }
             }, 200); 
@@ -270,12 +310,10 @@
         document.getElementById('menu-research').addEventListener('click', (e) => handleMenuClick(e.currentTarget, '請自己研究'));
         document.getElementById('menu-more').addEventListener('click', (e) => handleMenuClick(e.currentTarget, '沒有更多'));
 
-        // 產生混亂字串：加入 AI 排版幻覺與相鄰去重
         function generateChaosString() {
             if(historyText.length === 0) return "無效輸入。";
             
             const numLines = Math.floor(Math.random() * 39) + 2; 
-            
             let rawResult = "";
             const listMarkers = ["- ", "* ", "1. ", "> ", "### "];
             const dividers = ["\n---\n", "\n___\n", "\n\n"];
@@ -470,7 +508,6 @@
 
                     i++;
 
-                    // 確保輸入文字時會稍微滑到底部
                     const isAtBottom = centerStage.scrollHeight - centerStage.scrollTop <= centerStage.clientHeight + 10;
                     if (isAtBottom) scrollToBottom();
 
@@ -529,7 +566,6 @@
             });
         }
 
-        // 修改捲動功能，加入 smooth 滑順效果
         function scrollToBottom() {
             centerStage.scrollTo({
                 top: centerStage.scrollHeight,
@@ -544,6 +580,14 @@
         });
 
         scrollBtn.addEventListener('click', scrollToBottom);
+
+        sendBtn.addEventListener('click', () => {
+            if (inputField.value.trim() !== '') {
+                processUserInput(inputField.value);
+                inputField.value = '';
+                inputField.blur();
+            }
+        });
 
         inputField.addEventListener('keypress', function (e) {
             if (e.key === 'Enter' && this.value.trim() !== '') {
