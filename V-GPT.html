@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI Spectacle - 資訊奇觀</title>
     <style>
         /* ====== 基礎設定 ====== */
@@ -19,6 +19,8 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+            /* 避免 iOS Safari 下方的選單列遮擋 */
+            height: 100dvh; 
         }
 
         /* ====== 左側導覽列 (電腦版) ====== */
@@ -284,85 +286,109 @@
            當螢幕小於 768px 時觸發
         ========================================= */
         @media (max-width: 768px) {
-            /* 1. 隱藏左側導覽列 */
-            .side-rail { display: none; }
+            /* 1. 隱藏左側導覽列 (強制) */
+            .side-rail { display: none !important; }
 
             /* 2. 頂部列調整 */
-            .top-bar { padding: 12px 15px; }
+            .top-bar { padding: 12px 16px; }
+            .top-bar-left { gap: 16px; }
 
             /* 顯示漢堡選單 */
-            .hamburger-menu { display: flex; }
+            .hamburger-menu { 
+                display: flex; 
+                width: 28px; 
+                height: 28px;
+            }
 
-            /* 將贊助按鈕推到右上角，解除絕對置中 */
+            .model-selector { font-size: 18px; padding: 4px 8px; }
+
+            /* 將贊助按鈕推到右上角，並偽裝成登入按鈕的白底風格 */
             .top-bar-center {
                 position: static;
                 transform: none;
+                display: flex;
+                align-items: center;
             }
             
             .donate-btn {
-                padding: 6px 14px;
-                font-size: 13px;
+                background-color: #ffffff;
+                color: #000000;
+                font-weight: 600;
+                padding: 8px 16px;
+                font-size: 14px;
             }
 
             /* 隱藏原本右上角的圖示 */
             .right-icons { display: none; }
 
-            /* 3. 中央文字縮小 */
-            .center-stage h1 { font-size: 24px; }
+            /* 3. 中央文字縮小符合手機比例 */
+            .center-stage { padding: 0 20px; }
+            .center-stage h1 { font-size: 28px; font-weight: 600; }
 
             /* 4. 底部輸入區域調整 */
             .input-container {
-                padding: 0 15px;
-                margin-bottom: 20px;
+                padding: 0 16px;
+                margin-bottom: 24px;
             }
 
-            /* 輸入框內部留白縮小 */
-            .input-box { padding: 8px 10px; }
+            /* 輸入框內部放大，更適合手指點擊 */
+            .input-box { 
+                padding: 8px 12px; 
+                border-radius: 30px;
+            }
+
+            /* 按鈕放大確保好點擊 */
+            .icon-btn { width: 36px; height: 36px; }
 
             /* 選單寬度適應手機 */
             .attach-menu {
-                width: calc(100vw - 30px);
-                left: 15px;
+                width: calc(100vw - 32px);
+                left: 16px;
+                bottom: calc(100% + 12px);
             }
 
             .model-menu {
                 width: 280px;
             }
 
-            /* 仿造截圖：加號按鈕加上底色 */
+            /* 加號按鈕加上底色 */
             #plus-btn {
                 background-color: #404040;
+                color: #ececec;
             }
 
-            /* 仿造截圖：麥克風按鈕變成藥丸形狀，並加入文字 */
+            /* 麥克風按鈕變成藥丸形狀，並加入文字 */
             #mic-btn {
                 width: auto;
-                border-radius: 16px;
-                padding: 0 12px;
+                height: 36px;
+                border-radius: 18px;
+                padding: 0 14px;
                 background-color: #404040;
-                gap: 6px;
+                gap: 8px;
             }
             
             #mic-btn::after {
                 content: "語音";
-                font-size: 14px;
+                font-size: 15px;
+                font-weight: 500;
                 color: #ececec;
                 display: block;
             }
             
             #mic-btn svg {
-                width: 16px;
-                height: 16px;
+                width: 18px;
+                height: 18px;
             }
 
             /* 5. 顯示底部的免責聲明文字 */
             .disclaimer-text {
                 display: block;
-                font-size: 11px;
+                font-size: 12px;
                 color: #8e8ea0;
                 text-align: center;
-                margin-top: 12px;
-                line-height: 1.5;
+                margin-top: 16px;
+                line-height: 1.4;
+                padding: 0 10px;
             }
         }
     </style>
@@ -455,7 +481,7 @@
                 </button>
                 <input type="file" id="file-upload" hidden accept="image/*">
                 
-                <input type="text" id="user-input" placeholder="想問就問">
+                <input type="text" id="user-input" placeholder="想問就問" style="font-size: 16px;">
                 
                 <button class="icon-btn" id="mic-btn" title="語音輸入">
                     <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: none;">
