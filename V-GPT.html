@@ -22,7 +22,34 @@
             height: 100dvh; 
         }
 
-        /* ====== 主要內容區 (已移除側邊欄，現在佔滿全螢幕) ====== */
+        /* ====== 左側導覽列 (電腦版專屬) ====== */
+        .side-rail {
+            width: 60px;
+            background-color: #171717;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            border-right: 1px solid #333;
+            flex-shrink: 0; /* 防止被擠壓 */
+        }
+
+        .side-rail .icon {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: #b4b4b4;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .side-rail .icon:hover { background-color: #2f2f2f; color: #fff; }
+
+        /* ====== 主要內容區 ====== */
         .main-content {
             flex: 1;
             display: flex;
@@ -199,7 +226,7 @@
             cursor: pointer;
             color: #ececec;
             font-size: 15px;
-            transition: background-color 0.1s; /* 讓原本的 hover 反應更快 */
+            transition: background-color 0.1s; 
         }
 
         .menu-item:hover { background-color: #404040; }
@@ -207,7 +234,7 @@
         /* 閃爍動畫設計 */
         @keyframes flashEffect {
             0% { background-color: #2f2f2f; }
-            50% { background-color: #666666; } /* 瞬間閃現淺灰色 */
+            50% { background-color: #666666; } 
             100% { background-color: #404040; }
         }
 
@@ -275,20 +302,16 @@
            手機版專屬適配
         ========================================= */
         @media (max-width: 768px) {
-            /* 隱藏贊助作者按鈕與右側圖示 */
+            /* 手機版隱藏側邊欄、贊助按鈕與右側圖示 */
+            .side-rail { display: none !important; }
             .top-bar-center { display: none !important; }
             .right-icons { display: none !important; }
 
             /* 頂部列調整 */
             .top-bar { padding: 12px 16px; }
-            .top-bar-left { gap: 16px; }
 
-            /* 顯示漢堡選單 */
-            .hamburger-menu { 
-                display: flex; 
-                width: 28px; 
-                height: 28px;
-            }
+            /* 移除了原本為漢堡選單保留的 gap，讓標題自然靠左 */
+            .top-bar-left { gap: 0; }
 
             .model-selector { font-size: 20px; padding: 4px 8px; }
 
@@ -359,17 +382,19 @@
 </head>
 <body>
 
+    <nav class="side-rail">
+        <div class="icon" title="新對話">
+            <svg viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        </div>
+        <div class="icon" title="搜尋" onclick="window.open('https://www.google.com', '_blank')">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        </div>
+    </nav>
+
     <main class="main-content">
         <header class="top-bar">
             
             <div class="top-bar-left">
-                <div class="hamburger-menu" id="hamburger-menu">
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="4" y1="10" x2="20" y2="10"></line>
-                        <line x1="4" y1="14" x2="20" y2="14"></line>
-                    </svg>
-                </div>
-
                 <div class="model-selector-wrapper">
                     <div class="model-selector" id="vgpt-title">
                         V-GPT <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
@@ -460,7 +485,6 @@
         const greetingText = document.getElementById('greeting-text');
         const canvasContainer = document.getElementById('canvas-container');
         const micBtn = document.getElementById('mic-btn');
-        const hamburgerMenu = document.getElementById('hamburger-menu');
         
         // 浮窗與按鈕元素
         const plusBtn = document.getElementById('plus-btn');
@@ -500,13 +524,6 @@
                 attachMenu.classList.remove('show');
             }, 200); 
         }
-
-        // 手機版漢堡選單嘲諷互動
-        hamburgerMenu.addEventListener('click', (e) => {
-            e.stopPropagation();
-            greetingText.style.display = 'block';
-            greetingText.innerText = '側邊導覽列已解構';
-        });
 
         // 綁定底部選單嘲諷文字事件 (帶閃爍效果)
         menuCreate.addEventListener('click', (e) => handleMenuClick(e.currentTarget, 'Ai不能創作'));
