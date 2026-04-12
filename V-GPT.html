@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Spectacle - 資訊奇觀</title>
     <style>
-        /* 基礎設定 */
+        /* ====== 基礎設定 ====== */
         * {
             margin: 0;
             padding: 0;
@@ -21,7 +21,7 @@
             overflow: hidden;
         }
 
-        /* 左側導覽列 */
+        /* ====== 左側導覽列 (電腦版) ====== */
         .side-rail {
             width: 60px;
             background-color: #171717;
@@ -47,7 +47,7 @@
 
         .side-rail .icon:hover { background-color: #2f2f2f; color: #fff; }
 
-        /* 主要內容區 */
+        /* ====== 主要內容區 ====== */
         .main-content {
             flex: 1;
             display: flex;
@@ -62,6 +62,21 @@
             align-items: center;
             padding: 15px 20px;
             position: relative;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 漢堡選單 (電腦版隱藏) */
+        .hamburger-menu {
+            display: none;
+            cursor: pointer;
+            color: #ececec;
+            align-items: center;
+            justify-content: center;
         }
 
         /* 左上角模型選擇器與下拉選單 */
@@ -83,9 +98,7 @@
             transition: background-color 0.2s;
         }
         
-        .model-selector:hover {
-            background-color: #2f2f2f;
-        }
+        .model-selector:hover { background-color: #2f2f2f; }
 
         /* 下拉選單 */
         .model-menu {
@@ -116,37 +129,14 @@
             transition: background-color 0.2s;
         }
 
-        .model-menu-item:hover {
-            background-color: #404040;
-        }
-
-        .model-menu-icon {
-            color: #b4b4b4;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
+        .model-menu-item:hover { background-color: #404040; }
+        .model-menu-icon { color: #b4b4b4; display: flex; align-items: center; justify-content: center; }
         .model-menu-icon svg { width: 24px; height: 24px; fill: none; }
+        .model-menu-text { display: flex; flex-direction: column; gap: 4px; }
+        .model-menu-name { font-size: 15px; color: #ececec; font-weight: 500; }
+        .model-menu-desc { font-size: 13px; color: #b4b4b4; }
 
-        .model-menu-text {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .model-menu-name {
-            font-size: 15px;
-            color: #ececec;
-            font-weight: 500;
-        }
-
-        .model-menu-desc {
-            font-size: 13px;
-            color: #b4b4b4;
-        }
-
-        /* ====== 置中的贊助按鈕區塊 ====== */
+        /* 置中的贊助按鈕區塊 */
         .top-bar-center {
             position: absolute;
             left: 50%;
@@ -168,23 +158,12 @@
             transition: opacity 0.2s, background-color 0.2s, transform 0.1s;
         }
 
-        .donate-btn:hover { 
-            opacity: 0.9;
-            background-color: #4a4a6a; 
-        }
-
-        .donate-btn:active {
-            transform: scale(0.97);
-        }
+        .donate-btn:hover { opacity: 0.9; background-color: #4a4a6a; }
+        .donate-btn:active { transform: scale(0.97); }
         
-        .top-bar .right-icons {
-            display: flex;
-            gap: 15px;
-            color: #ececec;
-            cursor: pointer;
-        }
+        .right-icons { display: flex; gap: 15px; color: #ececec; cursor: pointer; }
 
-        /* 中央舞台 */
+        /* ====== 中央舞台 ====== */
         .center-stage {
             flex: 1;
             display: flex;
@@ -226,10 +205,7 @@
             flex-direction: column;
         }
 
-        .attach-menu.show {
-            display: flex;
-            animation: fadeIn 0.15s ease-out;
-        }
+        .attach-menu.show { display: flex; animation: fadeIn 0.15s ease-out; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(5px); }
@@ -298,6 +274,97 @@
         .input-box input::placeholder { color: #8e8ea0; }
         svg { width: 20px; height: 20px; fill: currentColor; }
 
+        /* 免責聲明 (電腦版預設隱藏) */
+        .disclaimer-text {
+            display: none;
+        }
+
+        /* =========================================
+           手機版專屬適配 (Media Queries)
+           當螢幕小於 768px 時觸發
+        ========================================= */
+        @media (max-width: 768px) {
+            /* 1. 隱藏左側導覽列 */
+            .side-rail { display: none; }
+
+            /* 2. 頂部列調整 */
+            .top-bar { padding: 12px 15px; }
+
+            /* 顯示漢堡選單 */
+            .hamburger-menu { display: flex; }
+
+            /* 將贊助按鈕推到右上角，解除絕對置中 */
+            .top-bar-center {
+                position: static;
+                transform: none;
+            }
+            
+            .donate-btn {
+                padding: 6px 14px;
+                font-size: 13px;
+            }
+
+            /* 隱藏原本右上角的圖示 */
+            .right-icons { display: none; }
+
+            /* 3. 中央文字縮小 */
+            .center-stage h1 { font-size: 24px; }
+
+            /* 4. 底部輸入區域調整 */
+            .input-container {
+                padding: 0 15px;
+                margin-bottom: 20px;
+            }
+
+            /* 輸入框內部留白縮小 */
+            .input-box { padding: 8px 10px; }
+
+            /* 選單寬度適應手機 */
+            .attach-menu {
+                width: calc(100vw - 30px);
+                left: 15px;
+            }
+
+            .model-menu {
+                width: 280px;
+            }
+
+            /* 仿造截圖：加號按鈕加上底色 */
+            #plus-btn {
+                background-color: #404040;
+            }
+
+            /* 仿造截圖：麥克風按鈕變成藥丸形狀，並加入文字 */
+            #mic-btn {
+                width: auto;
+                border-radius: 16px;
+                padding: 0 12px;
+                background-color: #404040;
+                gap: 6px;
+            }
+            
+            #mic-btn::after {
+                content: "語音";
+                font-size: 14px;
+                color: #ececec;
+                display: block;
+            }
+            
+            #mic-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            /* 5. 顯示底部的免責聲明文字 */
+            .disclaimer-text {
+                display: block;
+                font-size: 11px;
+                color: #8e8ea0;
+                text-align: center;
+                margin-top: 12px;
+                line-height: 1.5;
+            }
+        }
     </style>
 </head>
 <body>
@@ -314,18 +381,27 @@
     <main class="main-content">
         <header class="top-bar">
             
-            <div class="model-selector-wrapper">
-                <div class="model-selector" id="vgpt-title">
-                    V-GPT <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+            <div class="top-bar-left">
+                <div class="hamburger-menu" id="hamburger-menu">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="10" x2="20" y2="10"></line>
+                        <line x1="4" y1="14" x2="20" y2="14"></line>
+                    </svg>
                 </div>
-                <div class="model-menu" id="model-menu">
-                    <div class="model-menu-item">
-                        <div class="model-menu-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18m-9-9h18M19 5l-2 2M5 19l2-2M5 5l2 2m12 12l-2-2"/></svg>
-                        </div>
-                        <div class="model-menu-text">
-                            <div class="model-menu-name">Video Generative Pre-trained Transformer</div>
-                            <div class="model-menu-desc">影片生成預訓練模型</div>
+
+                <div class="model-selector-wrapper">
+                    <div class="model-selector" id="vgpt-title">
+                        V-GPT <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+                    </div>
+                    <div class="model-menu" id="model-menu">
+                        <div class="model-menu-item">
+                            <div class="model-menu-icon">
+                                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18m-9-9h18M19 5l-2 2M5 19l2-2M5 5l2 2m12 12l-2-2"/></svg>
+                            </div>
+                            <div class="model-menu-text">
+                                <div class="model-menu-name">Video Generative Pre-trained Transformer</div>
+                                <div class="model-menu-desc">影片生成預訓練模型</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -390,6 +466,11 @@
                     </svg>
                 </button>
             </div>
+
+            <div class="disclaimer-text">
+                傳送訊息至人工智慧聊天機器人 V-GPT，即表示你同意我們的條款，並已閱讀我們的《隱私權政策》。
+            </div>
+
         </footer>
     </main>
 
@@ -397,6 +478,7 @@
         const inputField = document.getElementById('user-input');
         const greetingText = document.getElementById('greeting-text');
         const micBtn = document.getElementById('mic-btn');
+        const hamburgerMenu = document.getElementById('hamburger-menu');
         
         // 浮窗與按鈕元素
         const plusBtn = document.getElementById('plus-btn');
@@ -418,6 +500,12 @@
             greetingText.innerText = text;
             attachMenu.classList.remove('show');
         }
+
+        // 手機版漢堡選單嘲諷互動
+        hamburgerMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            changeGreetingText('側邊導覽列已解構');
+        });
 
         // 綁定底部選單嘲諷文字事件
         menuCreate.addEventListener('click', () => changeGreetingText('Ai不能創作'));
