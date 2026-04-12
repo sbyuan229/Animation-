@@ -2,119 +2,604 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>互動式按鈕範例</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Spectacle - 資訊奇觀</title>
     <style>
-        /* CSS 部分 */
-
-        /* 基本頁面樣式，佔滿全螢幕且不包含側邊欄 */
-        body {
-            font-family: Arial, sans-serif;
+        /* ====== 基礎設定 ====== */
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: #212121;
+            color: #ECECEC;
             display: flex;
-            justify-content: center; /* 內容置中 */
-            align-items: center;    /* 內容置中 */
-            min-height: 100vh;
-            background-color: #f0f2f5; /* 淺灰色背景 */
+            height: 100vh;
+            overflow: hidden;
+            height: 100dvh; 
         }
 
-        /* 按鈕容器樣式 */
-        .container {
-            text-align: center;
-            background-color: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            width: 80%; /* 寬度佔頁面 80% */
-            max-width: 600px;
+        /* ====== 主要內容區 (已移除側邊欄，現在佔滿全螢幕) ====== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
 
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
+        /* ====== 頂部資訊列 ====== */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            position: relative;
         }
 
-        /* 按鈕群組的網格佈局，使按鈕對齊 */
-        .button-group {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 兩欄 */
-            gap: 20px; /* 按鈕間距 */
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        /* 基本按鈕樣式 */
-        .action-button {
-            padding: 15px 25px;
-            font-size: 16px;
-            color: white;
-            background-color: #007bff; /* 藍色 */
-            border: none;
-            border-radius: 8px;
+        /* 漢堡選單 (電腦版預設隱藏) */
+        .hamburger-menu {
+            display: none;
             cursor: pointer;
-            transition: background-color 0.2s; /* 平滑過渡效果 */
-            outline: none; /* 移除點擊時的藍色邊框 */
+            color: #ececec;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* 滑鼠懸停時的樣式 */
-        .action-button:hover {
-            background-color: #0056b3; /* 更深的藍色 */
+        /* 左上角模型選擇器與下拉選單 */
+        .model-selector-wrapper {
+            position: relative;
+            z-index: 200;
         }
 
-        /* * === 按鈕點擊「閃一下」的核心 CSS ===
-         */
+        .model-selector {
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #ececec;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        
+        .model-selector:hover { background-color: #2f2f2f; }
 
-        /* 定義「閃爍」動畫 */
-        @keyframes flash {
-            0% {
-                background-color: #007bff; /* 初始藍色 */
+        /* 下拉選單 */
+        .model-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 5px;
+            background-color: #2f2f2f;
+            border-radius: 16px;
+            padding: 12px;
+            width: 340px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+        }
+
+        .model-menu.show {
+            display: block;
+            animation: fadeIn 0.15s ease-out;
+        }
+
+        .model-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: default;
+            transition: background-color 0.2s;
+        }
+
+        .model-menu-item:hover { background-color: #404040; }
+        .model-menu-icon { color: #b4b4b4; display: flex; align-items: center; justify-content: center; }
+        .model-menu-icon svg { width: 24px; height: 24px; fill: none; }
+        .model-menu-text { display: flex; flex-direction: column; gap: 4px; }
+        .model-menu-name { font-size: 15px; color: #ececec; font-weight: 500; }
+        .model-menu-desc { font-size: 13px; color: #b4b4b4; }
+
+        /* 置中的贊助按鈕區塊 */
+        .top-bar-center {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+        }
+
+        .donate-btn {
+            background-color: #3b3b4f;
+            color: #d1d5db;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.2s, background-color 0.2s, transform 0.1s;
+        }
+
+        .donate-btn:hover { opacity: 0.9; background-color: #4a4a6a; }
+        .donate-btn:active { transform: scale(0.97); }
+        
+        .right-icons { display: flex; gap: 15px; color: #ececec; cursor: pointer; }
+
+        /* ====== 中央舞台 ====== */
+        .center-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .center-stage h1 {
+            font-size: 32px;
+            font-weight: 500;
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+            transition: opacity 0.3s ease, transform 0.3s ease; 
+        }
+
+        .center-stage.keyboard-open h1 {
+            transform: translateY(12vh); 
+        }
+
+        /* ====== 底部輸入列與附加浮窗 ====== */
+        .input-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto 40px auto;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        .attach-menu {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 20px;
+            background-color: #2f2f2f;
+            border-radius: 16px;
+            padding: 8px 0;
+            width: 240px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+            z-index: 100;
+            flex-direction: column;
+        }
+
+        .attach-menu.show { display: flex; animation: fadeIn 0.15s ease-out; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .menu-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            color: #ececec;
+            font-size: 15px;
+            transition: background-color 0.1s; /* 讓原本的 hover 反應更快 */
+        }
+
+        .menu-item:hover { background-color: #404040; }
+        
+        /* 閃爍動畫設計 */
+        @keyframes flashEffect {
+            0% { background-color: #2f2f2f; }
+            50% { background-color: #666666; } /* 瞬間閃現淺灰色 */
+            100% { background-color: #404040; }
+        }
+
+        .menu-item.flash-active {
+            animation: flashEffect 0.2s ease-out;
+            background-color: #666666 !important;
+        }
+
+        .menu-item svg { width: 20px; height: 20px; color: #b4b4b4; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .menu-divider { height: 1px; background-color: #444; margin: 6px 16px; }
+        .menu-item .arrow-right { margin-left: auto; width: 16px; height: 16px; }
+
+        /* 輸入框本體 */
+        .input-box {
+            background-color: #2f2f2f;
+            border-radius: 25px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #b4b4b4;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .icon-btn:hover { background-color: #404040; color: #fff; }
+        .icon-btn.recording { color: #ff4a4a; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .input-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ECECEC;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .input-box input::placeholder { color: #8e8ea0; }
+        svg { width: 20px; height: 20px; fill: currentColor; }
+
+        /* 免責聲明 (電腦版預設隱藏) */
+        .disclaimer-text {
+            display: none;
+        }
+
+        /* =========================================
+           手機版專屬適配
+        ========================================= */
+        @media (max-width: 768px) {
+            /* 隱藏贊助作者按鈕與右側圖示 */
+            .top-bar-center { display: none !important; }
+            .right-icons { display: none !important; }
+
+            /* 頂部列調整 */
+            .top-bar { padding: 12px 16px; }
+            .top-bar-left { gap: 16px; }
+
+            /* 顯示漢堡選單 */
+            .hamburger-menu { 
+                display: flex; 
+                width: 28px; 
+                height: 28px;
             }
-            50% {
-                background-color: #99cfff; /* 閃爍時變為淺藍色 */
+
+            .model-selector { font-size: 20px; padding: 4px 8px; }
+
+            /* 中央文字放大符合手機比例 */
+            .center-stage { padding: 0 20px; }
+            .center-stage h1 { font-size: 28px; font-weight: 600; }
+
+            /* 底部輸入區域放大與調整 */
+            .input-container {
+                padding: 0 16px;
+                margin-bottom: 24px;
             }
-            100% {
-                background-color: #007bff; /* 恢復初始藍色 */
+
+            .input-box { 
+                padding: 10px 14px; 
+                border-radius: 30px;
+            }
+
+            .input-box input {
+                font-size: 17px; 
+            }
+
+            .attach-menu {
+                width: calc(100vw - 32px);
+                left: 16px;
+                bottom: calc(100% + 12px);
+            }
+
+            .model-menu { width: 280px; }
+
+            #plus-btn {
+                background-color: #404040;
+                color: #ececec;
+                width: 36px;
+                height: 36px;
+            }
+
+            #mic-btn {
+                width: auto;
+                height: 36px;
+                border-radius: 18px;
+                padding: 0 14px;
+                background-color: #404040;
+                gap: 8px;
+            }
+            
+            #mic-btn::after {
+                content: "語音";
+                font-size: 15px;
+                font-weight: 500;
+                color: #ececec;
+                display: block;
+            }
+            
+            #mic-btn svg { width: 18px; height: 18px; }
+
+            .disclaimer-text {
+                display: block;
+                font-size: 12px;
+                color: #8e8ea0;
+                text-align: center;
+                margin-top: 16px;
+                line-height: 1.4;
+                padding: 0 10px;
             }
         }
-
-        /* 用於觸發動畫的類別 */
-        .is-flashing {
-            animation: flash 0.3s ease; /* 播放 0.3 秒的閃爍動畫 */
-        }
-
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>我的 V-GPT</h1>
-        <p>選擇一個選項開始：</p>
-        
-        <div class="button-group">
-            <button class="action-button">創作圖像</button>
-            <button class="action-button">思考</button>
-            <button class="action-button">深入研究</button>
-            <button class="action-button">更多</button>
-        </div>
-    </div>
+    <main class="main-content">
+        <header class="top-bar">
+            
+            <div class="top-bar-left">
+                <div class="hamburger-menu" id="hamburger-menu">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="10" x2="20" y2="10"></line>
+                        <line x1="4" y1="14" x2="20" y2="14"></line>
+                    </svg>
+                </div>
+
+                <div class="model-selector-wrapper">
+                    <div class="model-selector" id="vgpt-title">
+                        V-GPT <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+                    </div>
+                    <div class="model-menu" id="model-menu">
+                        <div class="model-menu-item">
+                            <div class="model-menu-icon">
+                                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18m-9-9h18M19 5l-2 2M5 19l2-2M5 5l2 2m12 12l-2-2"/></svg>
+                            </div>
+                            <div class="model-menu-text">
+                                <div class="model-menu-name">Video Generative Pre-trained Transformer</div>
+                                <div class="model-menu-desc">影片生成預訓練模型</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="top-bar-center">
+                <button class="donate-btn" onclick="alert('跳轉至贊助頁面...')">
+                    ✨ 贊助作者
+                </button>
+            </div>
+
+            <div class="right-icons">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg>
+            </div>
+        </header>
+
+        <section class="center-stage" id="canvas-container">
+            <h1 id="greeting-text">我們該從哪裡開始？</h1>
+        </section>
+
+        <footer class="input-container">
+            
+            <div class="attach-menu" id="attach-menu">
+                <div class="menu-item" id="menu-upload">
+                    <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                    新增照片和檔案
+                </div>
+                <div class="menu-divider"></div>
+                <div class="menu-item" id="menu-create">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    創作圖像
+                </div>
+                <div class="menu-item" id="menu-think">
+                    <svg viewBox="0 0 24 24"><path d="M9 18h6m-3-13v2m-5.657.343l1.414 1.414m8.486 0l1.414-1.414M6 12h2m8 0h2M9 22h6c1.105 0 2-.895 2-2H7c0 1.105.895 2 2 2z"/><circle cx="12" cy="11" r="5"/></svg>
+                    思考
+                </div>
+                <div class="menu-item" id="menu-research">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6l4 2"/></svg>
+                    深入研究
+                </div>
+                <div class="menu-item" id="menu-more">
+                    <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+                    更多
+                    <svg class="arrow-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+            </div>
+
+            <div class="input-box">
+                <button class="icon-btn" id="plus-btn" title="附加">
+                    <svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+                </button>
+                <input type="file" id="file-upload" hidden accept="image/*">
+                
+                <input type="text" id="user-input" placeholder="想問就問">
+                
+                <button class="icon-btn" id="mic-btn" title="語音輸入">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: none;">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                        <line x1="8" y1="22" x2="16" y2="22"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="disclaimer-text">
+                傳送訊息至人工智慧聊天機器人 V-GPT，即表示你同意我們的條款，並已閱讀我們的《隱私權政策》。
+            </div>
+
+        </footer>
+    </main>
 
     <script>
-        // 取得所有具有 'action-button' 類別的按鈕
-        const buttons = document.querySelectorAll('.action-button');
+        const inputField = document.getElementById('user-input');
+        const greetingText = document.getElementById('greeting-text');
+        const canvasContainer = document.getElementById('canvas-container');
+        const micBtn = document.getElementById('mic-btn');
+        const hamburgerMenu = document.getElementById('hamburger-menu');
+        
+        // 浮窗與按鈕元素
+        const plusBtn = document.getElementById('plus-btn');
+        const attachMenu = document.getElementById('attach-menu');
+        const fileUpload = document.getElementById('file-upload');
+        
+        const vgptTitle = document.getElementById('vgpt-title');
+        const modelMenu = document.getElementById('model-menu');
+        
+        const menuUpload = document.getElementById('menu-upload');
+        const menuCreate = document.getElementById('menu-create');
+        const menuThink = document.getElementById('menu-think');
+        const menuResearch = document.getElementById('menu-research');
+        const menuMore = document.getElementById('menu-more');
 
-        // 迭代每個按鈕並添加點擊事件監聽器
-        buttons.forEach(button => {
-            button.addEventListener('click', () => {
-                // 1. 添加 'is-flashing' 類別來觸發 CSS 動畫
-                button.classList.add('is-flashing');
-
-                // 2. 使用 setTimeout 在動畫完成後移除該類別
-                // 延遲時間（這裡設置為 300 毫秒）應與 CSS 動畫持續時間一致
-                setTimeout(() => {
-                    button.classList.remove('is-flashing');
-                }, 300); // 300 毫秒後移除
-            });
+        // ==== 手機版專屬：輸入框聚焦時文字下移 ====
+        inputField.addEventListener('focus', () => {
+            if (window.innerWidth <= 768) {
+                canvasContainer.classList.add('keyboard-open');
+            }
         });
-    </script>
 
+        inputField.addEventListener('blur', () => {
+            canvasContainer.classList.remove('keyboard-open');
+        });
+
+        // 閃爍並改變文字的通用函數
+        function handleMenuClick(buttonElement, text) {
+            // 加上閃爍 class
+            buttonElement.classList.add('flash-active');
+            
+            // 延遲 0.2 秒，讓使用者看到閃光後，再變更文字與收合選單
+            setTimeout(() => {
+                buttonElement.classList.remove('flash-active');
+                greetingText.style.display = 'block';
+                greetingText.innerText = text;
+                attachMenu.classList.remove('show');
+            }, 200); 
+        }
+
+        // 手機版漢堡選單嘲諷互動
+        hamburgerMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            greetingText.style.display = 'block';
+            greetingText.innerText = '側邊導覽列已解構';
+        });
+
+        // 綁定底部選單嘲諷文字事件 (帶閃爍效果)
+        menuCreate.addEventListener('click', (e) => handleMenuClick(e.currentTarget, 'Ai不能創作'));
+        menuThink.addEventListener('click', (e) => handleMenuClick(e.currentTarget, 'Ai不會思考'));
+        menuResearch.addEventListener('click', (e) => handleMenuClick(e.currentTarget, '請自己研究'));
+        menuMore.addEventListener('click', (e) => handleMenuClick(e.currentTarget, '沒有更多'));
+
+        // V-GPT 下拉選單開關邏輯
+        vgptTitle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modelMenu.classList.toggle('show');
+            attachMenu.classList.remove('show');
+        });
+
+        // 附加按鈕選單開關邏輯
+        plusBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            attachMenu.classList.toggle('show');
+            modelMenu.classList.remove('show');
+        });
+
+        // 點擊空白處自動收合所有選單
+        document.addEventListener('click', (e) => {
+            if (!attachMenu.contains(e.target) && !plusBtn.contains(e.target)) {
+                attachMenu.classList.remove('show');
+            }
+            if (!modelMenu.contains(e.target) && !vgptTitle.contains(e.target)) {
+                modelMenu.classList.remove('show');
+            }
+        });
+
+        // 檔案上傳邏輯
+        menuUpload.addEventListener('click', () => {
+            attachMenu.classList.remove('show');
+            fileUpload.click();
+        });
+
+        fileUpload.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const fileName = this.files[0].name;
+                console.log("用戶上傳了:", fileName);
+                greetingText.style.display = 'block';
+                greetingText.innerText = "正在解構圖片...";
+            }
+        });
+
+        // 文字輸入邏輯
+        inputField.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && this.value.trim() !== '') {
+                console.log("用戶輸入了:", this.value);
+                greetingText.style.display = 'block';
+                greetingText.innerText = "無法處理輸入。";
+                this.value = '';
+                this.blur(); 
+            }
+        });
+
+        // 語音輸入邏輯
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'zh-TW';
+            recognition.interimResults = false;
+
+            micBtn.addEventListener('click', () => {
+                recognition.start();
+            });
+
+            recognition.addEventListener('audiostart', () => {
+                micBtn.classList.add('recording');
+                inputField.placeholder = "正在聆聽...";
+            });
+
+            recognition.addEventListener('result', (e) => {
+                const transcript = e.results[0][0].transcript;
+                inputField.value += transcript;
+            });
+
+            recognition.addEventListener('audioend', () => {
+                micBtn.classList.remove('recording');
+                inputField.placeholder = "想問就問";
+            });
+
+            recognition.addEventListener('error', (e) => {
+                micBtn.classList.remove('recording');
+                inputField.placeholder = "想問就問";
+            });
+        } else {
+            micBtn.addEventListener('click', () => {
+                greetingText.style.display = 'block';
+                greetingText.innerText = '語音模組已損壞';
+            });
+        }
+    </script>
 </body>
 </html>
