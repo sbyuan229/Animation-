@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -21,16 +21,25 @@
         /* ====== 頂部資訊列 ====== */
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; position: relative; z-index: 10; background-color: #212121; }
         .top-bar-left { display: flex; align-items: center; gap: 12px; }
-        .hamburger-menu { display: none; cursor: pointer; color: #ececec; }
+        .hamburger-menu { display: none; cursor: pointer; color: #ececec; align-items: center; justify-content: center; }
         .model-selector-wrapper { position: relative; z-index: 200; }
         .model-selector { font-size: 18px; font-weight: 600; cursor: pointer; color: #ececec; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; transition: background 0.2s; }
         .model-selector:hover { background-color: #2f2f2f; }
-        .model-menu { display: none; position: absolute; top: 100%; left: 0; margin-top: 5px; background-color: #2f2f2f; border-radius: 16px; padding: 12px; width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        .model-menu { display: none; position: absolute; top: 100%; left: 0; margin-top: 5px; background-color: #2f2f2f; border-radius: 16px; padding: 12px; width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05); }
         .model-menu.show { display: block; animation: fadeIn 0.15s ease-out; }
+        .model-menu-item { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 12px; cursor: default; transition: background 0.2s; }
+        .model-menu-item:hover { background-color: #404040; }
+        .model-menu-icon { color: #b4b4b4; display: flex; align-items: center; justify-content: center; }
+        .model-menu-icon svg { width: 24px; height: 24px; fill: none; }
+        .model-menu-text { display: flex; flex-direction: column; gap: 4px; }
+        .model-menu-name { font-size: 15px; color: #ececec; font-weight: 500; }
+        .model-menu-desc { font-size: 13px; color: #b4b4b4; }
         
         .top-bar-center { position: absolute; left: 50%; transform: translateX(-50%); z-index: 100; transition: opacity 0.3s; }
-        .donate-btn { background-color: #3b3b4f; color: #d1d5db; border: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .right-icons { display: flex; gap: 15px; color: #ececec; cursor: pointer; }
+        .donate-btn { background-color: #3b3b4f; color: #d1d5db; border: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.2s, background 0.2s, transform 0.1s; }
+        .donate-btn:hover { opacity: 0.9; background-color: #4a4a6a; }
+        .donate-btn:active { transform: scale(0.97); }
+        .right-icons { display: flex; gap: 15px; color: #ececec; cursor: pointer; transition: opacity 0.3s; }
 
         /* ====== 中央舞台 (捲動區) ====== */
         .center-stage { 
@@ -44,11 +53,12 @@
         }
 
         .greeting-container { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
-        .center-stage h1 { font-size: 32px; font-weight: 500; letter-spacing: 1px; transition: opacity 0.2s ease; }
+        .center-stage h1 { font-size: 32px; font-weight: 500; letter-spacing: 1px; transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease; }
 
         /* ====== 對話流設計 ====== */
         .chat-feed { display: none; width: 100%; max-width: 800px; padding: 40px 20px 80px 20px; flex-direction: column; gap: 32px; }
         .message-row { display: flex; width: 100%; }
+        
         .user-row { justify-content: flex-end; }
         .user-msg { background: #2f2f2f; color: #ececec; padding: 12px 18px; border-radius: 20px; font-size: 16px; max-width: 80%; word-break: break-all; }
 
@@ -67,22 +77,20 @@
             box-shadow: 0 0 5px rgba(0,0,0,0.5); 
         }
 
-        /* 動作按鈕樣式 */
         .ai-actions { display: flex; gap: 8px; margin-top: 12px; opacity: 0; transition: opacity 0.3s ease; }
         .ai-action-btn { background: none; border: none; color: #b4b4b4; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s, color 0.2s; }
         .ai-action-btn:hover { background-color: #2f2f2f; color: #ececec; }
-        .ai-action-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-        .ai-action-btn.filled { color: #ececec; }
-        .ai-action-btn.filled svg { fill: currentColor; }
+        .ai-action-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
         /* ====== 向下跳轉箭頭 ====== */
         @keyframes floatUpDown {
             0%, 100% { transform: translateX(-50%) translateY(0); }
             50% { transform: translateX(-50%) translateY(-6px); } 
         }
+
         .scroll-down-btn { 
             position: absolute; 
-            bottom: 110px; 
+            bottom: 110px; /* 電腦版高度 */
             left: 50%; 
             transform: translateX(-50%); 
             width: 32px; 
@@ -99,6 +107,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
             animation: floatUpDown 2s ease-in-out infinite; 
         }
+        .scroll-down-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
 
         /* ====== 底部輸入列 ====== */
         .input-container { 
@@ -112,25 +121,65 @@
             z-index: 200; 
             background-color: #212121; 
         }
+        
+        .attach-menu { display: none; position: absolute; bottom: calc(100% + 10px); left: 20px; background-color: #2f2f2f; border-radius: 16px; padding: 8px 0; width: 240px; box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05); z-index: 100; flex-direction: column; }
+        .attach-menu.show { display: flex; animation: fadeIn 0.15s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .menu-item { padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; color: #ececec; font-size: 15px; transition: background-color 0.1s; }
+        .menu-item:hover { background-color: #404040; }
+        @keyframes flashEffect { 0% { background-color: #2f2f2f; } 50% { background-color: #666666; } 100% { background-color: #404040; } }
+        .menu-item.flash-active { animation: flashEffect 0.2s ease-out; background-color: #666666 !important; }
+        .menu-item svg { width: 20px; height: 20px; color: #b4b4b4; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .menu-divider { height: 1px; background-color: #444; margin: 6px 16px; }
+
         .input-box { background-color: #2f2f2f; border-radius: 25px; padding: 10px 15px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .icon-btn { background: none; border: none; color: #b4b4b4; cursor: pointer; display: flex; justify-content: center; align-items: center; width: 32px; height: 32px; border-radius: 50%; transition: background 0.2s, color 0.2s; }
+        .icon-btn:hover { background-color: #404040; color: #fff; }
         .input-box input { flex: 1; background: transparent; border: none; color: #ECECEC; font-size: 16px; outline: none; min-width: 0; }
+        .input-box input::placeholder { color: #8e8ea0; }
+        svg { width: 20px; height: 20px; fill: currentColor; }
         
-        #send-btn { background-color: #ececec; color: #212121; display: flex; align-items: center; justify-content: center; }
-        #send-btn svg { width: 18px; height: 18px; transform: translate(-1px, 1px); }
+        #send-btn { 
+            background-color: #ececec; 
+            color: #212121; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 0; 
+        }
+        #send-btn:hover { background-color: #ffffff; }
+        #send-btn svg { 
+            width: 18px; 
+            height: 18px; 
+            transform: translate(-1px, 1px); 
+        }
 
-        .attach-menu { display: none; position: absolute; bottom: calc(100% + 10px); left: 20px; background-color: #2f2f2f; border-radius: 16px; padding: 8px 0; width: 240px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); z-index: 100; flex-direction: column; }
-        .attach-menu.show { display: flex; animation: fadeIn 0.15s ease-out; }
-        .menu-item { padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; color: #ececec; font-size: 15px; }
+        .disclaimer-text { display: none; }
 
         /* ====== 手機版適配 ====== */
         @media (max-width: 768px) {
-            .top-bar-center, .right-icons { display: none !important; }
-            .scroll-down-btn { bottom: 125px; }
-            .input-container { padding: 0 16px 16px 16px; }
+            .top-bar-center { display: none !important; }
+            .right-icons { display: none !important; }
+            .top-bar { padding: 12px 16px; }
+            .top-bar-left { gap: 16px; }
+            .hamburger-menu { display: flex; width: 28px; height: 28px; }
+            .model-selector { font-size: 20px; padding: 4px 8px; }
+            .center-stage h1 { font-size: 28px; font-weight: 600; }
+            .chat-feed { padding: 20px 16px 60px 16px; gap: 24px;}
+            
+            /* 修改點：提高手機版箭頭高度 (原 85px -> 125px) */
+            .scroll-down-btn { width: 36px; height: 36px; bottom: 125px; }
+
+            .input-container { padding: 0 16px 16px 16px; margin-bottom: 0; }
+            .input-box { padding: 8px 12px; border-radius: 30px; gap: 6px; }
             .input-box input { font-size: 17px; }
+            .attach-menu { width: calc(100vw - 32px); left: 16px; bottom: calc(100% + 12px); }
+            .model-menu { width: 280px; }
+            #mic-btn { width: 32px; height: 32px; border-radius: 50%; padding: 0; background-color: transparent; }
+            #mic-btn::after { display: none; }
+            
+            .disclaimer-text { display: block; font-size: 12px; color: #8e8ea0; text-align: center; margin-top: 12px; line-height: 1.4; padding: 0 10px; }
             .main-content { padding-bottom: 90px; } 
-            .ai-actions { gap: 4px; } /* 手機版按鈕間距稍微縮小 */
         }
     </style>
 </head>
@@ -139,17 +188,27 @@
     <main class="main-content">
         <header class="top-bar">
             <div class="top-bar-left">
+                <div class="hamburger-menu" id="hamburger-menu">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="10" x2="20" y2="10"></line><line x1="4" y1="14" x2="20" y2="14"></line></svg>
+                </div>
                 <div class="model-selector-wrapper">
                     <div class="model-selector" id="vgpt-title">
-                        V-GPT <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                        V-GPT <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
                     </div>
                     <div class="model-menu" id="model-menu">
-                        <div style="padding: 12px; color: #ececec;">Video Generative Transformer</div>
+                        <div class="model-menu-item">
+                            <div class="model-menu-icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18m-9-9h18M19 5l-2 2M5 19l2-2M5 5l2 2m12 12l-2-2"/></svg></div>
+                            <div class="model-menu-text">
+                                <div class="model-menu-name">Video Generative Pre-trained Transformer</div>
+                                <div class="model-menu-desc">影片生成預訓練模型</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="top-bar-center" id="top-sponsor"><button class="donate-btn">✨ 贊助作者</button></div>
-            <div class="right-icons" id="top-icons"><svg style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg></div>
+            
+            <div class="top-bar-center" id="top-sponsor"><button class="donate-btn" onclick="alert('跳轉至贊助頁面...')">✨ 贊助作者</button></div>
+            <div class="right-icons" id="top-icons"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg></div>
         </header>
 
         <section class="center-stage" id="center-stage">
@@ -159,22 +218,27 @@
             <div class="chat-feed" id="chat-feed"></div>
         </section>
 
-        <button class="scroll-down-btn" id="scroll-down-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+        <button class="scroll-down-btn" id="scroll-down-btn">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
 
         <footer class="input-container">
             <div class="attach-menu" id="attach-menu">
-                <div class="menu-item" id="menu-upload">新增照片和檔案</div>
-                <div class="menu-item" id="menu-create">創作圖像</div>
-                <div class="menu-item" id="menu-think">思考</div>
-                <div class="menu-item" id="menu-research">深入研究</div>
-                <div class="menu-item" id="menu-more">更多</div>
+                <div class="menu-item" id="menu-upload"><svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>新增照片和檔案</div>
+                <div class="menu-divider"></div>
+                <div class="menu-item" id="menu-create"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>創作圖像</div>
+                <div class="menu-item" id="menu-think"><svg viewBox="0 0 24 24"><path d="M9 18h6m-3-13v2m-5.657.343l1.414 1.414m8.486 0l1.414-1.414M6 12h2m8 0h2M9 22h6c1.105 0 2-.895 2-2H7c0 1.105.895 2 2 2z"/><circle cx="12" cy="11" r="5"/></svg>思考</div>
+                <div class="menu-item" id="menu-research"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6l4 2"/></svg>深入研究</div>
+                <div class="menu-item" id="menu-more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></svg>更多</div>
             </div>
 
             <div class="input-box">
-                <button class="icon-btn" id="plus-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg></button>
+                <button class="icon-btn" id="plus-btn" title="附加"><svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
                 <input type="text" id="user-input" placeholder="想問就問">
-                <button class="icon-btn" id="mic-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></button>
-                <button class="icon-btn" id="send-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+                <button class="icon-btn" id="mic-btn" title="語音輸入"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: none;"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line><line x1="8" y1="22" x2="16" y2="22"></line></svg></button>
+                <button class="icon-btn" id="send-btn" title="發送訊息">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: none;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
             </div>
         </footer>
     </main>
@@ -187,65 +251,65 @@
         const chatFeed = document.getElementById('chat-feed');
         const scrollBtn = document.getElementById('scroll-down-btn');
         const sendBtn = document.getElementById('send-btn');
-        const plusBtn = document.getElementById('plus-btn');
-        const attachMenu = document.getElementById('attach-menu');
 
         let historyText = ""; 
         let totalGeneratedChars = 0; 
 
-        //選單控制
-        plusBtn.addEventListener('click', (e) => { e.stopPropagation(); attachMenu.classList.toggle('show'); });
-        document.addEventListener('click', () => attachMenu.classList.remove('show'));
+        const plusBtn = document.getElementById('plus-btn');
+        const attachMenu = document.getElementById('attach-menu');
+        const vgptTitle = document.getElementById('vgpt-title');
+        const modelMenu = document.getElementById('model-menu');
 
-        function handleMenuClick(text) {
-            if (greetingContainer.style.display !== 'none') {
-                greetingText.innerText = text;
-            } else {
-                inputField.value += text;
-            }
+        vgptTitle.addEventListener('click', (e) => { e.stopPropagation(); modelMenu.classList.toggle('show'); attachMenu.classList.remove('show'); });
+        plusBtn.addEventListener('click', (e) => { e.stopPropagation(); attachMenu.classList.toggle('show'); modelMenu.classList.remove('show'); });
+        document.addEventListener('click', (e) => {
+            if (!attachMenu.contains(e.target) && !plusBtn.contains(e.target)) attachMenu.classList.remove('show');
+            if (!modelMenu.contains(e.target) && !vgptTitle.contains(e.target)) modelMenu.classList.remove('show');
+        });
+
+        function handleMenuClick(buttonElement, text) {
+            buttonElement.classList.add('flash-active');
+            setTimeout(() => {
+                buttonElement.classList.remove('flash-active');
+                attachMenu.classList.remove('show');
+                if (greetingContainer.style.display !== 'none') {
+                    greetingText.style.opacity = '0';
+                    setTimeout(() => {
+                        greetingText.innerText = text;
+                        greetingText.style.opacity = '1';
+                    }, 200);
+                } else {
+                    inputField.value += text;
+                }
+            }, 200); 
         }
-        document.getElementById('menu-upload').addEventListener('click', () => handleMenuClick('無法上傳檔案'));
-        document.getElementById('menu-create').addEventListener('click', () => handleMenuClick('Ai不能創作'));
-        document.getElementById('menu-think').addEventListener('click', () => handleMenuClick('Ai不會思考'));
-        document.getElementById('menu-research').addEventListener('click', () => handleMenuClick('請自己研究'));
-        document.getElementById('menu-more').addEventListener('click', () => handleMenuClick('沒有更多'));
 
-        // 動作按鈕生成邏輯
-        function addAiActions(parentRow, spans) {
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'ai-actions';
-            actionsDiv.innerHTML = `
-                <button class="ai-action-btn copy-btn" title="複製"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
-                <button class="ai-action-btn redo-btn" title="重新產生"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg></button>
-                <button class="ai-action-btn like-btn" title="好回應"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg></button>
-                <button class="ai-action-btn dislike-btn" title="壞回應"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg></button>
-            `;
-            parentRow.appendChild(actionsDiv);
-            setTimeout(() => { actionsDiv.style.opacity = '1'; }, 50);
-
-            actionsDiv.querySelector('.copy-btn').addEventListener('click', () => {
-                const fullText = spans.map(s => s.textContent).join('');
-                navigator.clipboard.writeText(fullText).then(() => alert('已複製內容'));
-            });
-            actionsDiv.querySelector('.redo-btn').addEventListener('click', () => {
-                parentRow.remove();
-                generateAiResponse();
-            });
-        }
+        document.getElementById('menu-upload').addEventListener('click', (e) => handleMenuClick(e.currentTarget, '無法上傳檔案'));
+        document.getElementById('menu-create').addEventListener('click', (e) => handleMenuClick(e.currentTarget, 'Ai不能創作'));
+        document.getElementById('menu-think').addEventListener('click', (e) => handleMenuClick(e.currentTarget, 'Ai不會思考'));
+        document.getElementById('menu-research').addEventListener('click', (e) => handleMenuClick(e.currentTarget, '請自己研究'));
+        document.getElementById('menu-more').addEventListener('click', (e) => handleMenuClick(e.currentTarget, '沒有更多'));
 
         function generateChaosString() {
             if(historyText.length === 0) return "無效輸入。";
-            const numLines = Math.floor(Math.random() * 30) + 2; 
-            let raw = "";
+            const numLines = Math.floor(Math.random() * 39) + 2; 
+            let rawResult = "";
+            const listMarkers = ["- ", "* ", "1. ", "> "];
             for (let i = 0; i < numLines; i++) {
-                let line = "";
-                while (line.length < 20) {
-                    let start = Math.floor(Math.random() * historyText.length);
-                    line += historyText.substring(start, start + 2);
+                let lineStr = (Math.random() < 0.15) ? listMarkers[Math.floor(Math.random() * listMarkers.length)] : "";
+                let lineLength = Math.floor(Math.random() * 25) + 5; 
+                while (lineStr.length < lineLength) {
+                    let chunkSize = Math.floor(Math.random() * 3) + 1;
+                    let startIdx = Math.floor(Math.random() * historyText.length);
+                    lineStr += historyText.substring(startIdx, startIdx + chunkSize);
                 }
-                raw += line + "\n";
+                rawResult += lineStr + (i < numLines - 1 ? (Math.random() < 0.1 ? "\n---\n" : "\n") : "");
             }
-            return raw;
+            let finalResult = rawResult[0] || "";
+            for (let i = 1; i < rawResult.length; i++) {
+                if (rawResult[i] !== rawResult[i - 1] || ["-", "_", "\n"].includes(rawResult[i])) finalResult += rawResult[i];
+            }
+            return finalResult;
         }
 
         function processUserInput(text) {
@@ -253,6 +317,8 @@
             historyText += text.replace(/\s+/g, ''); 
             greetingContainer.style.display = 'none';
             chatFeed.style.display = 'flex';
+            document.getElementById('top-sponsor').style.display = 'none';
+            document.getElementById('top-icons').style.display = 'none';
             const userRow = document.createElement('div');
             userRow.className = 'message-row user-row';
             userRow.innerHTML = `<div class="user-msg">${text}</div>`;
@@ -262,7 +328,7 @@
         }
 
         function triggerSwapAnimation(span1, span2, aiContent) {
-            if (span1.textContent === '\n' || span2.textContent === '\n' || span1.dataset.isSwapping || span2.dataset.isSwapping) return;
+            if (span1.textContent === '\n' || span2.textContent === '\n' || span1.textContent === span2.textContent) return;
             span1.dataset.isSwapping = "true"; span2.dataset.isSwapping = "true";
             const x1 = span1.offsetLeft, y1 = span1.offsetTop, x2 = span2.offsetLeft, y2 = span2.offsetTop;
             const c1 = document.createElement('span'), c2 = document.createElement('span');
@@ -291,30 +357,31 @@
                 if (i < chaosString.length) {
                     const span = document.createElement('span');
                     span.textContent = chaosString[i]; aiContent.appendChild(span); currentSpans.push(span);
-                    if (Math.random() < 0.1 && currentSpans.length > 5) {
+                    if (currentSpans.length > 15 && Math.random() < 0.1) {
                         let idx1 = Math.floor(Math.random() * currentSpans.length);
                         let idx2 = (idx1 + 1) % currentSpans.length;
-                        triggerSwapAnimation(currentSpans[idx1], currentSpans[idx2], aiContent);
+                        if(!currentSpans[idx1].dataset.isSwapping && !currentSpans[idx2].dataset.isSwapping) triggerSwapAnimation(currentSpans[idx1], currentSpans[idx2], aiContent);
                     }
                     i++;
                     if (centerStage.scrollHeight - centerStage.scrollTop <= centerStage.clientHeight + 100) scrollToBottom();
-                    setTimeout(typeChar, 30);
-                } else {
-                    // 打字結束後，新增功能按鈕
-                    addAiActions(aiRow, currentSpans);
+                    setTimeout(typeChar, Math.random() * 50 + 20);
                 }
             }
             typeChar();
         }
 
         function scrollToBottom() { centerStage.scrollTo({ top: centerStage.scrollHeight, behavior: 'smooth' }); }
+
         centerStage.addEventListener('scroll', () => {
             const isAtBottom = centerStage.scrollHeight - centerStage.scrollTop <= centerStage.clientHeight + 15; 
             scrollBtn.style.display = isAtBottom ? 'none' : 'flex';
         });
+
         scrollBtn.addEventListener('click', scrollToBottom);
         sendBtn.addEventListener('click', () => { if (inputField.value.trim() !== '') { processUserInput(inputField.value); inputField.value = ''; } });
         inputField.addEventListener('keypress', (e) => { if (e.key === 'Enter' && inputField.value.trim() !== '') { processUserInput(inputField.value); inputField.value = ''; } });
     </script>
+</body>
+</html>
 </body>
 </html>
