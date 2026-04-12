@@ -1,4 +1,4 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -77,10 +77,15 @@
             box-shadow: 0 0 5px rgba(0,0,0,0.5); 
         }
 
+        /* 動作按鈕樣式 */
         .ai-actions { display: flex; gap: 8px; margin-top: 12px; opacity: 0; transition: opacity 0.3s ease; }
         .ai-action-btn { background: none; border: none; color: #b4b4b4; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s, color 0.2s; }
         .ai-action-btn:hover { background-color: #2f2f2f; color: #ececec; }
         .ai-action-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        
+        /* 實心按鈕狀態 */
+        .ai-action-btn.filled { color: #ececec; }
+        .ai-action-btn.filled svg { fill: currentColor; }
 
         /* ====== 向下跳轉箭頭 ====== */
         @keyframes floatUpDown {
@@ -90,7 +95,7 @@
 
         .scroll-down-btn { 
             position: absolute; 
-            bottom: 110px; /* 電腦版高度 */
+            bottom: 110px; 
             left: 50%; 
             transform: translateX(-50%); 
             width: 32px; 
@@ -167,7 +172,6 @@
             .center-stage h1 { font-size: 28px; font-weight: 600; }
             .chat-feed { padding: 20px 16px 60px 16px; gap: 24px;}
             
-            /* 修改點：提高手機版箭頭高度 (原 85px -> 125px) */
             .scroll-down-btn { width: 36px; height: 36px; bottom: 125px; }
 
             .input-container { padding: 0 16px 16px 16px; margin-bottom: 0; }
@@ -251,15 +255,15 @@
         const chatFeed = document.getElementById('chat-feed');
         const scrollBtn = document.getElementById('scroll-down-btn');
         const sendBtn = document.getElementById('send-btn');
-
-        let historyText = ""; 
-        let totalGeneratedChars = 0; 
-
         const plusBtn = document.getElementById('plus-btn');
         const attachMenu = document.getElementById('attach-menu');
         const vgptTitle = document.getElementById('vgpt-title');
         const modelMenu = document.getElementById('model-menu');
 
+        let historyText = ""; 
+        let totalGeneratedChars = 0; 
+
+        // 選單互動
         vgptTitle.addEventListener('click', (e) => { e.stopPropagation(); modelMenu.classList.toggle('show'); attachMenu.classList.remove('show'); });
         plusBtn.addEventListener('click', (e) => { e.stopPropagation(); attachMenu.classList.toggle('show'); modelMenu.classList.remove('show'); });
         document.addEventListener('click', (e) => {
@@ -290,9 +294,60 @@
         document.getElementById('menu-research').addEventListener('click', (e) => handleMenuClick(e.currentTarget, '請自己研究'));
         document.getElementById('menu-more').addEventListener('click', (e) => handleMenuClick(e.currentTarget, '沒有更多'));
 
+        // 生成 AI 回應後的動作按鈕 (修復讚/倒讚互斥邏輯)
+        function addAiActions(parentRow, spans) {
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'ai-actions';
+            actionsDiv.innerHTML = `
+                <button class="ai-action-btn copy-btn" title="複製"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                <button class="ai-action-btn redo-btn" title="重新產生"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg></button>
+                <button class="ai-action-btn like-btn" title="好回應"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg></button>
+                <button class="ai-action-btn dislike-btn" title="壞回應"><svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg></button>
+            `;
+            parentRow.appendChild(actionsDiv);
+            setTimeout(() => { actionsDiv.style.opacity = '1'; }, 50);
+
+            const copyBtn = actionsDiv.querySelector('.copy-btn');
+            const redoBtn = actionsDiv.querySelector('.redo-btn');
+            const likeBtn = actionsDiv.querySelector('.like-btn');
+            const dislikeBtn = actionsDiv.querySelector('.dislike-btn');
+
+            copyBtn.addEventListener('click', () => {
+                const fullText = spans.map(s => s.textContent).join('');
+                navigator.clipboard.writeText(fullText).then(() => alert('已複製內容'));
+            });
+
+            redoBtn.addEventListener('click', () => {
+                parentRow.remove();
+                generateAiResponse();
+            });
+
+            // 互斥選取邏輯
+            likeBtn.addEventListener('click', () => {
+                const isFilled = likeBtn.classList.contains('filled');
+                if (isFilled) {
+                    likeBtn.classList.remove('filled');
+                } else {
+                    likeBtn.classList.add('filled');
+                    dislikeBtn.classList.remove('filled');
+                }
+            });
+
+            dislikeBtn.addEventListener('click', () => {
+                const isFilled = dislikeBtn.classList.contains('filled');
+                if (isFilled) {
+                    dislikeBtn.classList.remove('filled');
+                } else {
+                    dislikeBtn.classList.add('filled');
+                    likeBtn.classList.remove('filled');
+                }
+            });
+        }
+
+        // 混亂字串生成
         function generateChaosString() {
             if(historyText.length === 0) return "無效輸入。";
-            const numLines = Math.floor(Math.random() * 39) + 2; 
+            const numLines = Math.floor(Math.random() * 30) + 2; 
             let rawResult = "";
             const listMarkers = ["- ", "* ", "1. ", "> "];
             for (let i = 0; i < numLines; i++) {
@@ -303,32 +358,13 @@
                     let startIdx = Math.floor(Math.random() * historyText.length);
                     lineStr += historyText.substring(startIdx, startIdx + chunkSize);
                 }
-                rawResult += lineStr + (i < numLines - 1 ? (Math.random() < 0.1 ? "\n---\n" : "\n") : "");
+                rawResult += lineStr + (i < numLines - 1 ? "\n" : "");
             }
-            let finalResult = rawResult[0] || "";
-            for (let i = 1; i < rawResult.length; i++) {
-                if (rawResult[i] !== rawResult[i - 1] || ["-", "_", "\n"].includes(rawResult[i])) finalResult += rawResult[i];
-            }
-            return finalResult;
-        }
-
-        function processUserInput(text) {
-            if (text.trim() === '') return;
-            historyText += text.replace(/\s+/g, ''); 
-            greetingContainer.style.display = 'none';
-            chatFeed.style.display = 'flex';
-            document.getElementById('top-sponsor').style.display = 'none';
-            document.getElementById('top-icons').style.display = 'none';
-            const userRow = document.createElement('div');
-            userRow.className = 'message-row user-row';
-            userRow.innerHTML = `<div class="user-msg">${text}</div>`;
-            chatFeed.appendChild(userRow);
-            scrollToBottom();
-            generateAiResponse();
+            return rawResult;
         }
 
         function triggerSwapAnimation(span1, span2, aiContent) {
-            if (span1.textContent === '\n' || span2.textContent === '\n' || span1.textContent === span2.textContent) return;
+            if (span1.textContent === '\n' || span2.textContent === '\n' || span1.dataset.isSwapping || span2.dataset.isSwapping) return;
             span1.dataset.isSwapping = "true"; span2.dataset.isSwapping = "true";
             const x1 = span1.offsetLeft, y1 = span1.offsetTop, x2 = span2.offsetLeft, y2 = span2.offsetTop;
             const c1 = document.createElement('span'), c2 = document.createElement('span');
@@ -364,10 +400,27 @@
                     }
                     i++;
                     if (centerStage.scrollHeight - centerStage.scrollTop <= centerStage.clientHeight + 100) scrollToBottom();
-                    setTimeout(typeChar, Math.random() * 50 + 20);
+                    setTimeout(typeChar, 30);
+                } else {
+                    addAiActions(aiRow, currentSpans);
                 }
             }
             typeChar();
+        }
+
+        function processUserInput(text) {
+            if (text.trim() === '') return;
+            historyText += text.replace(/\s+/g, ''); 
+            greetingContainer.style.display = 'none';
+            chatFeed.style.display = 'flex';
+            document.getElementById('top-sponsor').style.display = 'none';
+            document.getElementById('top-icons').style.display = 'none';
+            const userRow = document.createElement('div');
+            userRow.className = 'message-row user-row';
+            userRow.innerHTML = `<div class="user-msg">${text}</div>`;
+            chatFeed.appendChild(userRow);
+            scrollToBottom();
+            generateAiResponse();
         }
 
         function scrollToBottom() { centerStage.scrollTo({ top: centerStage.scrollHeight, behavior: 'smooth' }); }
@@ -381,7 +434,5 @@
         sendBtn.addEventListener('click', () => { if (inputField.value.trim() !== '') { processUserInput(inputField.value); inputField.value = ''; } });
         inputField.addEventListener('keypress', (e) => { if (e.key === 'Enter' && inputField.value.trim() !== '') { processUserInput(inputField.value); inputField.value = ''; } });
     </script>
-</body>
-</html>
 </body>
 </html>
