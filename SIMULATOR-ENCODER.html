@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>0.95 OLED 影片編碼器</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="panel">
+        <p class="eyebrow">0.95 OLED Simulator Encoder</p>
+        <h1>影片轉 OLED 視覺編碼</h1>
+        <p class="intro">
+          上傳影片後，工具會抽樣成 128x64 的亮度座標，並輸出含時間碼與畫面編碼的 JSON。
+          預覽畫面會以 1920x1080 黑底、128x64 圓形光點模擬 OLED。
+        </p>
+
+        <div class="control-grid">
+          <label class="file-control">
+            <span>選擇影片</span>
+            <input id="videoInput" type="file" accept="video/*" />
+          </label>
+
+          <label>
+            FPS
+            <input id="fpsInput" type="number" min="1" max="30" step="1" value="12" />
+          </label>
+
+          <label>
+            取景模式
+            <select id="fitModeInput">
+              <option value="contain" selected>完整置入</option>
+              <option value="cover">填滿裁切</option>
+            </select>
+          </label>
+
+          <label>
+            亮度
+            <input id="brightnessInput" type="range" min="0.2" max="3" step="0.05" value="1.2" />
+          </label>
+
+          <label>
+            對比
+            <input id="contrastInput" type="range" min="0.2" max="3" step="0.05" value="1.25" />
+          </label>
+
+          <label>
+            Gamma
+            <input id="gammaInput" type="range" min="0.4" max="2.5" step="0.05" value="0.85" />
+          </label>
+
+          <label>
+            最大圓半徑
+            <input id="radiusInput" type="range" min="2" max="7.5" step="0.1" value="6.4" />
+          </label>
+
+          <label class="checkbox">
+            <input id="binaryInput" type="checkbox" />
+            <span>輸出單色 OLED 位元圖</span>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="processButton" type="button" disabled>開始轉換</button>
+          <button id="downloadButton" type="button" disabled>下載 JSON</button>
+          <button id="downloadVideoButton" type="button" disabled>下載 MP4 模擬影片</button>
+          <button id="downloadAudioButton" type="button" disabled>下載聲音 WAV</button>
+          <button id="copyButton" type="button" disabled>複製 JSON</button>
+        </div>
+
+        <div class="status">
+          <div class="progress">
+            <div id="progressBar"></div>
+          </div>
+          <span id="statusText">等待影片上傳</span>
+        </div>
+      </section>
+
+      <section class="preview-section">
+        <div class="preview-header">
+          <div>
+            <p class="eyebrow">Preview</p>
+            <h2>1920x1080 OLED 圓點模擬</h2>
+          </div>
+          <div class="playback">
+            <button id="playButton" type="button" disabled>播放</button>
+            <input id="frameSlider" type="range" min="0" max="0" value="0" disabled />
+            <span id="frameLabel">Frame 0 / 0</span>
+          </div>
+        </div>
+
+        <canvas id="oledCanvas" width="1920" height="1080"></canvas>
+      </section>
+
+      <section class="output-section">
+        <div>
+          <p class="eyebrow">Encoded Data</p>
+          <h2>時間與畫面編碼</h2>
+        </div>
+        <textarea id="outputText" spellcheck="false" placeholder="轉換後的 JSON 會出現在這裡"></textarea>
+      </section>
+    </main>
+
+    <video id="sourceVideo" muted playsinline preload="metadata"></video>
+    <canvas id="sampleCanvas" width="128" height="64"></canvas>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
